@@ -48,6 +48,8 @@ JSON: version and reader protocol; scope; provenance (GPU, UUID, driver, CUDA, h
 * **Startup**: each CUDA program moves a small fixed amount (about 15 MiB of copies for a plain CUDA program). Use phases, or compare two runs.
 * **Phases** shorter than 10 samples have fuzzy edges; the summary says so. Use `interval_ms=1` for millisecond phases.
 * **Baseline**: subtracting an idle rate is an estimate; it assumes the background stayed the same. The JSON gives its variation.
+* **Sample length**: the GPU closes a sample at the requested interval when it is busy; when it is mostly idle samples last longer (about 22 ms at a 10 ms request on GB10). `quality()` reports the observed interval. Totals are unaffected: every sample covers its own time span.
+* **Clocks**: the reader records the GPU sample clock and the system clock together every second. On GB10 they agree within 1 microsecond (measured offset -528 ns, spread 648 ns), so samples join with power, energy or logs on the system clock.
 
 ## 6. Errors
 | message | meaning |

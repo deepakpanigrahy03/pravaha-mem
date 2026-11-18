@@ -48,7 +48,16 @@ python examples/04_join_with_other_data.py /tmp/pravaha_lesson1.csv
 pravaha smmu status
 pravaha smmu run -- python -m pravaha_mem.demo h2d 8 256
 ```
-These count translation requests and misses, not bytes: useful to study page sizes (2 MiB pages need about 10 times fewer translations than 4 KiB pages) and translation caching.
+```
+pravaha smmu status (address translations, not bytes)
+  GPU SMMU counters : smmuv3_pmcg_13002, smmuv3_pmcg_13042, ... (7 in total)
+  default unit      : smmuv3_pmcg_13002
+  readable via      : perf (translation requests, translation misses)
+event                  count    per second   meaning
+transaction          1295537       1075976   translation requests
+tlb_miss              671242        557484   translation misses
+```
+These count translation requests and misses, not bytes: useful to study page sizes (2 MiB pages need about 10 times fewer translations than 4 KiB pages) and translation caching. The default unit is the GPU's translation control unit (TCU); the other six are its translation buffer units.
 
 ## Lesson 6: when something goes wrong
 | you see | fix |

@@ -112,7 +112,7 @@ m.to_json("run.json")     # totals, phases, baseline, sampling quality, provenan
   PASS  kernel write (cudaMemset)    4096.0 MiB  expected  4096.0  ratio 1.0000
   PASS  kernel read (GPU to GPU copy) 4095.9 MiB expected  4096.0  ratio 1.0000
 ```
-On real frameworks, observed from outside: PyTorch `.cuda()` 8 minus 4 copies of 1 GiB gives 3.9999 GiB; vLLM serving Qwen3 4B reads 7.52 GiB per generated token, against 7.49 GiB of weights. PASS means agreement for these workloads on that machine and software, not a claim about every workload.
+Samples carry the system clock; on GB10 it agrees with the GPU's sample clock within 1 microsecond. On real frameworks, observed from outside: PyTorch `.cuda()` 8 minus 4 copies of 1 GiB gives 3.9999 GiB; vLLM serving Qwen3 4B reads 7.52 GiB per generated token, against 7.49 GiB of weights. PASS means agreement for these workloads on that machine and software, not a claim about every workload.
 
 ## 🎓 Learn
 [docs/TUTORIAL.md](docs/TUTORIAL.md): lessons with expected output. [docs/MANUAL.md](docs/MANUAL.md): every command, option and field. Examples: [examples/](examples).
