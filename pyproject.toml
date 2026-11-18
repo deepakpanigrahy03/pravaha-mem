@@ -49,3 +49,7 @@ include = ["pravaha_mem*"]
 
 [tool.setuptools.package-data]
 pravaha_mem = ["reader.cpp", "smmu/pravaha_pmcg.c"]
+
+[tool.pytest.ini_options]
+markers = ["gpu: needs a GB10 with pravaha installed (light work only)"]
+addopts = "-m 'not gpu'"

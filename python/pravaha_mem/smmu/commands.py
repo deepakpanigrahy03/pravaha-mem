@@ -20,7 +20,7 @@ def _unit_name(x):
     if isinstance(x, dict):
         return x.get("unit") or x.get("name") or next(iter(x.values()))
     if isinstance(x, (tuple, list)):
-        return next((str(i) for i in x if str(i).startswith("smmuv3_pmcg")), str(x[-1]))
+        return x[0]
     return getattr(x, "unit", None) or getattr(x, "name", None) or str(x)
 
 

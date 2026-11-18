@@ -7,6 +7,8 @@
 | memory traffic | L2 read misses (fetched from memory) and L2 writes (sent toward memory) | measured |
 | C2C traffic | bytes crossing NVLink C2C | inferred: on GB10 all GPU memory is the shared LPDDR5X behind the CPU die; supported by `verify`. No link counter exists on GB10. |
 
+How the counting works, with diagrams (L2 hit: not counted; L2 miss: fetched over C2C, counted): [GB10_ARCHITECTURE.md](GB10_ARCHITECTURE.md).
+
 All values are **device wide**: every process on the GPU during the window. Live sampling on GB10 does not offer a split by memory type (aperture); the totals cover all of it.
 
 ## 2. Commands
@@ -60,10 +62,25 @@ JSON: version and reader protocol; scope; provenance (GPU, UUID, driver, CUDA, h
 | thermal headroom too low | `verify` stopped to protect the machine; let it cool |
 
 ## 7. Safety
-pravaha's own workloads (`verify`, the demo) are light: copies and simple writes and reads of a few GiB, about 1 s of GPU work per check, with a cool down between checks and a thermal headroom guard (start at 35 C or more of headroom, stop below 15 C). pravaha waits 1 s between stopping and starting readers, as the driver needs time to release the counters.
+pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple writes and reads of a few GiB, about 1 s of GPU work per check, with a cool down between checks and a thermal headroom guard (start at 35 C or more of headroom, stop below 15 C). pravaha waits 1 s between stopping and starting readers, as the driver needs time to release the counters.
 
-## 8. Developer notes
+## 8. Words used
+| word | meaning |
+|---|---|
+| host | the computer side: CPU and the memory programs normally use |
+| device | the GPU |
+| copy engine | GPU hardware that copies blocks of memory (`cudaMemcpy`, `.cuda()`, `.cpu()`) |
+| kernel, GPU code | a program running on the GPU's cores (matrix multiply, attention, `cudaMemset` ...) |
+| L2 cache | the GPU's last cache; every byte the GPU fetches from or sends to memory passes it |
+| sector | the L2 cache's unit of 32 bytes; the counters count sectors |
+| NVLink C2C | the link between the CPU die and the GPU die on GB10; the GPU's memory traffic crosses it |
+| device wide | counts every process on the GPU, not one program |
+| headroom | degrees between the GPU's temperature and its thermal limit |
+| capability | a single Linux permission attached to one file (here: may read performance counters) |
+| SMMU, translation | the unit that turns program addresses into memory addresses, one page at a time |
+
+## 9. Developer notes
 * `PRAVAHA_READER`: path of another reader binary. `PRAVAHA_PMCG`: path of another SMMU reader.
-* `python -m pravaha_mem.demo MODE COPIES MIB` (modes h2d, d2h, d2d, memset) moves known bytes; `PRAVAHA_DEMO_QUIET=S` waits S seconds between setup and work; `PRAVAHA_DEMO_WINDOW=1` prints when the work ran.
+* `python -m pravaha_mem.known_bytes DIRECTION TIMES SIZE_MIB` moves TIMES x SIZE_MIB: `h2d` (host to device: computer memory into the GPU, copy engines), `d2h` (device to host, copy engines), `d2d` (GPU buffer to GPU buffer, GPU code), `memset` (GPU code fills a buffer). `--help` explains everything. `PRAVAHA_KNOWN_PAUSE=S` sets the pause between setup and work (default 0.5 s); `PRAVAHA_KNOWN_WINDOW=1` prints when the work ran (used by verify).
 * Reader protocol v2 (stdout): `V 2`; `M names`; `C cupti_ns realtime_ns monotonic_ns`; `S idx t0 t1 v1..v5` (sectors); `E ok n | E busy | E error code`.
-* Tests without a GPU: `pip install .[test] && python -m pytest tests`.
+* Tests without a GPU: `pip install .[test] && python -m pytest tests`. On a GB10 with pravaha installed: `python -m pytest -m gpu tests` (light).

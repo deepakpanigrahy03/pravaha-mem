@@ -1,0 +1,170 @@
+{
+ "provenance": {
+  "gpu": "NVIDIA GB10",
+  "gpu_uuid": "GPU-d7548f8b-9ea4-50c8-d91e-d6c031abf702",
+  "driver": "580.159.03",
+  "cuda": "13.0",
+  "host": "gn100-2b96",
+  "kernel": "6.17.0-1021-nvidia",
+  "pravaha": "1.0.0"
+ },
+ "meaning": "this counter agreed with this known workload within the stated tolerance,\non this device, driver and software. It is not a claim about every workload.",
+ "metrics": {
+  "copy_bytes": {
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "conversion": "sectors x 32 / 2: each copied byte passes L2 twice (read, write)"
+  },
+  "kernel_read_miss_bytes": {
+   "counter": "lts__t_sectors_srcunit_tex_op_read_lookup_miss_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "kernel_write_bytes": {
+   "counter": "lts__t_sectors_srcunit_tex_op_write_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "all_read_miss_bytes": {
+   "counter": "lts__t_sectors_op_read_lookup_miss_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "all_write_bytes": {
+   "counter": "lts__t_sectors_op_write_realtime.sum",
+   "conversion": "sectors x 32"
+  }
+ },
+ "checks": [
+  {
+   "check": "idle machine: no copies",
+   "field": "copy_bytes",
+   "measured_bytes": 0.0,
+   "expected_bytes": 0,
+   "tolerance_bytes": 1048576,
+   "pass": true,
+   "headroom_before_c": 40.0
+  },
+  {
+   "check": "copy host to GPU",
+   "workload": "demo h2d 8 x 256 MiB",
+   "field": "copy_bytes",
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "expected_bytes": 2147483648,
+   "measured_bytes": 2147481644.1072857,
+   "ratio": 0.999999066864739,
+   "relative_error": -9.331352609498467e-07,
+   "tolerance": 0.002,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 38510.79917696622,
+     "net_bytes": 2147445393.200823
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 2259.892714264521,
+     "net_bytes": 2147481644.1072857
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    }
+   ],
+   "headroom_before_c": 39.0,
+   "headroom_after_c": 38.0
+  },
+  {
+   "check": "copy GPU to host",
+   "workload": "demo d2h 8 x 256 MiB",
+   "field": "copy_bytes",
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "expected_bytes": 2147483648,
+   "measured_bytes": 2147483883.4919076,
+   "ratio": 1.0000001096594648,
+   "relative_error": 1.0965946484198241e-07,
+   "tolerance": 0.002,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 227.34453073893735,
+     "net_bytes": 2147483676.6554694
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 20.508092328637577,
+     "net_bytes": 2147483883.4919076
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 5.630412868173294,
+     "net_bytes": 2147483898.369587
+    }
+   ],
+   "headroom_before_c": 39.0,
+   "headroom_after_c": 38.0
+  },
+  {
+   "check": "kernel write (cudaMemset)",
+   "workload": "demo memset 16 x 256 MiB",
+   "field": "kernel_write_bytes",
+   "counter": "lts__t_sectors_srcunit_tex_op_write_realtime.sum",
+   "expected_bytes": 4294967296,
+   "measured_bytes": 4294918144.0,
+   "ratio": 0.9999885559082031,
+   "relative_error": -1.1444091796875e-05,
+   "tolerance": 0.01,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 4294918144.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294918144.0
+    },
+    {
+     "raw_bytes": 4294918144.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294918144.0
+    },
+    {
+     "raw_bytes": 4294918144.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294918144.0
+    }
+   ],
+   "headroom_before_c": 39.0,
+   "headroom_after_c": 38.0
+  },
+  {
+   "check": "kernel read (GPU to GPU copy)",
+   "workload": "demo d2d 16 x 256 MiB",
+   "field": "kernel_read_miss_bytes",
+   "counter": "lts__t_sectors_srcunit_tex_op_read_lookup_miss_realtime.sum",
+   "expected_bytes": 4294967296,
+   "measured_bytes": 4283016531.1033335,
+   "ratio": 0.9972174957169531,
+   "relative_error": -0.002782504283046938,
+   "tolerance": 0.02,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 4311009792.0,
+     "background_bytes": 72354613.74375293,
+     "net_bytes": 4238655178.256247
+    },
+    {
+     "raw_bytes": 4359380336.125831,
+     "background_bytes": 76363805.02249737,
+     "net_bytes": 4283016531.1033335
+    },
+    {
+     "raw_bytes": 4294864896.0,
+     "background_bytes": 5578034.951451619,
+     "net_bytes": 4289286861.048548
+    }
+   ],
+   "headroom_before_c": 39.0,
+   "headroom_after_c": 38.0
+  }
+ ],
+ "all_pass": true
+}

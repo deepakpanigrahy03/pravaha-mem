@@ -13,10 +13,21 @@ pravaha verify
 
 ## Lesson 1: measure any program
 ```bash
-pravaha run --idle 2 -- python -m pravaha_mem.demo h2d 8 256
+pravaha run --idle 2 -- python -m pravaha_mem.known_bytes h2d 8 256
 bash examples/01_any_command.sh            # the same, plus CSV and JSON
 ```
-Rows: **idle** (the machine before your program: your baseline), **run** (while it ran), **total**. Columns: **copy** (copy engines), **kread / kwrite** (GPU code), **C2C** (all GPU memory traffic), **GB/s**. The demo copies 2 GiB; you see a little more because every CUDA program moves a small fixed amount at start (here 0.0146 GiB of copies and 0.25 GiB of writes clearing its buffers).
+Rows: **idle** (the machine before your program: your baseline), **run** (while it ran), **total**. Columns: **copy** (copy engines), **kread / kwrite** (GPU code), **C2C** (all GPU memory traffic), **GB/s**. The command, word by word: `pravaha run --idle 2 --` means "measure 2 s of the quiet GPU, then measure while the following runs". `python -m pravaha_mem.known_bytes` is pravaha's test program; `h2d` means host to device (from the computer's memory into the GPU), `8` times, `256` MiB each: 2 GiB, moved by the copy engines. So the **copy** column should show about 2 GiB.
+
+You see a little more: 0.0146 GiB of copies is CUDA's own startup, which every CUDA program does, and 0.25 GiB in **kwrite** is the program clearing its GPU buffer before copying. Try the other directions and watch which column moves:
+
+| command | moves | column |
+|---|---|---|
+| `known_bytes h2d 8 256` | 2 GiB into the GPU | copy |
+| `known_bytes d2h 8 256` | 2 GiB out of the GPU | copy |
+| `known_bytes memset 16 256` | GPU code writes 4 GiB | kwrite |
+| `known_bytes d2d 16 256` | GPU code reads 4 GiB (and writes it elsewhere) | kread (and kwrite) |
+
+`python -m pravaha_mem.known_bytes --help` explains every argument.
 
 ## Lesson 2: phases in your own code
 ```bash
@@ -46,7 +57,7 @@ python examples/04_join_with_other_data.py /tmp/pravaha_lesson1.csv
 ## Lesson 5: address translations (SMMU)
 ```bash
 pravaha smmu status
-pravaha smmu run -- python -m pravaha_mem.demo h2d 8 256
+pravaha smmu run -- python -m pravaha_mem.known_bytes h2d 8 256
 ```
 ```
 pravaha smmu status (address translations, not bytes)

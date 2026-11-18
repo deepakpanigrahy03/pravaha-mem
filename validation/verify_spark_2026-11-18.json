@@ -1,0 +1,170 @@
+{
+ "provenance": {
+  "gpu": "NVIDIA GB10",
+  "gpu_uuid": "GPU-0f2ef1f5-ed0f-32d4-66c2-5f4b922227de",
+  "driver": "580.159.03",
+  "cuda": "13.0",
+  "host": "spark-086e",
+  "kernel": "6.17.0-1026-nvidia",
+  "pravaha": "1.0.0"
+ },
+ "meaning": "this counter agreed with this known workload within the stated tolerance,\non this device, driver and software. It is not a claim about every workload.",
+ "metrics": {
+  "copy_bytes": {
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "conversion": "sectors x 32 / 2: each copied byte passes L2 twice (read, write)"
+  },
+  "kernel_read_miss_bytes": {
+   "counter": "lts__t_sectors_srcunit_tex_op_read_lookup_miss_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "kernel_write_bytes": {
+   "counter": "lts__t_sectors_srcunit_tex_op_write_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "all_read_miss_bytes": {
+   "counter": "lts__t_sectors_op_read_lookup_miss_realtime.sum",
+   "conversion": "sectors x 32"
+  },
+  "all_write_bytes": {
+   "counter": "lts__t_sectors_op_write_realtime.sum",
+   "conversion": "sectors x 32"
+  }
+ },
+ "checks": [
+  {
+   "check": "idle machine: no copies",
+   "field": "copy_bytes",
+   "measured_bytes": 0.0,
+   "expected_bytes": 0,
+   "tolerance_bytes": 1048576,
+   "pass": true,
+   "headroom_before_c": 50.0
+  },
+  {
+   "check": "copy host to GPU",
+   "workload": "demo h2d 8 x 256 MiB",
+   "field": "copy_bytes",
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "expected_bytes": 2147483648,
+   "measured_bytes": 2147483904.0,
+   "ratio": 1.0000001192092896,
+   "relative_error": 1.1920928955078125e-07,
+   "tolerance": 0.002,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    }
+   ],
+   "headroom_before_c": 50.0,
+   "headroom_after_c": 48.0
+  },
+  {
+   "check": "copy GPU to host",
+   "workload": "demo d2h 8 x 256 MiB",
+   "field": "copy_bytes",
+   "counter": "lts__t_sectors_srcunit_ce.sum",
+   "expected_bytes": 2147483648,
+   "measured_bytes": 2147483904.0,
+   "ratio": 1.0000001192092896,
+   "relative_error": 1.1920928955078125e-07,
+   "tolerance": 0.002,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    },
+    {
+     "raw_bytes": 2147483904.0,
+     "background_bytes": 0.0,
+     "net_bytes": 2147483904.0
+    }
+   ],
+   "headroom_before_c": 50.0,
+   "headroom_after_c": 47.0
+  },
+  {
+   "check": "kernel write (cudaMemset)",
+   "workload": "demo memset 16 x 256 MiB",
+   "field": "kernel_write_bytes",
+   "counter": "lts__t_sectors_srcunit_tex_op_write_realtime.sum",
+   "expected_bytes": 4294967296,
+   "measured_bytes": 4294918144.0,
+   "ratio": 0.9999885559082031,
+   "relative_error": -1.1444091796875e-05,
+   "tolerance": 0.01,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 4294901760.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294901760.0
+    },
+    {
+     "raw_bytes": 4294918144.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294918144.0
+    },
+    {
+     "raw_bytes": 4294918144.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294918144.0
+    }
+   ],
+   "headroom_before_c": 49.0,
+   "headroom_after_c": 47.0
+  },
+  {
+   "check": "kernel read (GPU to GPU copy)",
+   "workload": "demo d2d 16 x 256 MiB",
+   "field": "kernel_read_miss_bytes",
+   "counter": "lts__t_sectors_srcunit_tex_op_read_lookup_miss_realtime.sum",
+   "expected_bytes": 4294967296,
+   "measured_bytes": 4294885376.0,
+   "ratio": 0.9999809265136719,
+   "relative_error": -1.9073486328125e-05,
+   "tolerance": 0.02,
+   "pass": true,
+   "runs": [
+    {
+     "raw_bytes": 4294864896.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294864896.0
+    },
+    {
+     "raw_bytes": 4294885376.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294885376.0
+    },
+    {
+     "raw_bytes": 4294885376.0,
+     "background_bytes": 0.0,
+     "net_bytes": 4294885376.0
+    }
+   ],
+   "headroom_before_c": 49.0,
+   "headroom_after_c": 46.0
+  }
+ ],
+ "all_pass": true
+}

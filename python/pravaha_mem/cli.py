@@ -26,51 +26,110 @@ def _err(msg: str) -> int:
 
 
 def _measure_opts(s):
-    s.add_argument("--idle", type=float, default=0.0, metavar="S", help="measure S seconds of idle baseline first")
-    s.add_argument("--interval", type=int, default=10, metavar="MS", help="sample interval in ms (default 10)")
-    s.add_argument("--device", type=int, default=0, help="GPU index (default 0)")
-    s.add_argument("--csv", metavar="FILE", help="one row per sample")
-    s.add_argument("--json", metavar="FILE", help="summary with provenance")
+    s.add_argument("--idle", type=float, default=0.0, metavar="SECONDS",
+                   help="first measure SECONDS of the GPU before anything starts, shown as its own row "
+                        "'idle' (your baseline: what the desktop and other programs move)")
+    s.add_argument("--interval", type=int, default=10, metavar="MS",
+                   help="take one sample every MS milliseconds (default 10; use 1 for phases of a few ms)")
+    s.add_argument("--device", type=int, default=0, metavar="N", help="which GPU (default 0; a GB10 has one)")
+    s.add_argument("--csv", metavar="FILE", help="also save one row per sample to FILE (times in ns)")
+    s.add_argument("--json", metavar="FILE", help="also save the summary with all details to FILE")
+
+
+OUTPUT = """output columns (all in GiB, for the whole GPU):
+  copy    bytes moved by copy engines (cudaMemcpy, .cuda(), .cpu(), model loading)
+  kread   bytes GPU code read from memory
+  kwrite  bytes GPU code wrote to memory
+  C2C     all GPU memory traffic; on GB10 it crosses NVLink C2C
+  GB/s    C2C bytes per second in that row
+rows: total; idle (with --idle); run, or one row per phase"""
+
+
+def _sub(sub, name, help, description, examples):
+    return sub.add_parser(name, help=help, formatter_class=argparse.RawDescriptionHelpFormatter,
+                          description=description, epilog=examples)
 
 
 def _parser():
     p = argparse.ArgumentParser(prog="pravaha", formatter_class=argparse.RawDescriptionHelpFormatter,
                                 description="Live GPU memory traffic over NVLink C2C on the NVIDIA GB10, "
-                                            "from the GPU's L2 cache counters.", epilog=EPILOG)
+                                            "from the GPU's L2 cache counters. Help for one command: "
+                                            "pravaha COMMAND --help", epilog=EPILOG)
     p.add_argument("--version", action="version", version=f"pravaha {__version__}")
     sub = p.add_subparsers(dest="verb", metavar="COMMAND")
 
-    s = sub.add_parser("install", help="once per machine: build the readers and allow counter reading")
-    s.add_argument("--prefix", default=None, help="install folder (default /usr/local/libexec/pravaha)")
+    s = _sub(sub, "install", "once per machine: build the readers and allow counter reading",
+             "Builds two small readers and installs them in /usr/local/libexec/pravaha, each with one\n"
+             "capability (cap_perfmon: may read performance counters). Asks for your password once.\n"
+             "Changes nothing else on the system. Undo with: pravaha uninstall",
+             "example:\n  pravaha install")
+    s.add_argument("--prefix", default=None, metavar="DIR",
+                   help="install folder (default /usr/local/libexec/pravaha); must be root owned")
     s.add_argument("--cap", default="cap_perfmon", choices=["cap_perfmon", "cap_sys_admin"],
-                   help="capability for the L2 reader (default cap_perfmon)")
-    s = sub.add_parser("uninstall", help="remove exactly what install created")
-    s.add_argument("--prefix", default=None)
-    sub.add_parser("status", help="is this machine ready? GPU, readers, counters, temperature")
-    s = sub.add_parser("verify", help="check the counters against known bytes (light, about 3 minutes)")
-    s.add_argument("--json", metavar="FILE", help="full report")
-    s.add_argument("--cooldown", type=float, default=30.0, metavar="S", help="seconds between checks (default 30)")
+                   help="capability for the L2 reader: cap_perfmon (default, smallest) or cap_sys_admin "
+                        "(only if your driver refuses cap_perfmon)")
+    s = _sub(sub, "uninstall", "remove exactly what install created",
+             "Removes the files listed in the install MANIFEST (after checking they are unchanged),\n"
+             "the folder, and any parent folders install created. Confirms nothing is left.",
+             "example:\n  pravaha uninstall\n  pip uninstall pravaha-mem      (the Python package)")
+    s.add_argument("--prefix", default=None, metavar="DIR")
+    _sub(sub, "status", "is this machine ready? GPU, readers, counters, temperature",
+         "Answers: which GPU and driver; are the readers installed with their capability; are the\n"
+         "GPU counters free right now (or used by another profiler); GPU temperature and headroom\n"
+         "to its thermal limit. Ends with 'ready' or what is missing.", "example:\n  pravaha status")
+    s = _sub(sub, "verify", "check pravaha against a program that moves known bytes (light, about 3 min)",
+             "Runs known_bytes (a small, readable test program) four times: copy 2 GiB into the GPU,\n"
+             "copy 2 GiB out, GPU code writes 4 GiB, GPU code reads 4 GiB. pravaha measures each from\n"
+             "outside and compares with the known amount. PASS = agreement within the stated tolerance\n"
+             "on this machine. Light work only; waits between checks; stops if the GPU gets warm.",
+             "example:\n  pravaha verify --json verify.json")
+    s.add_argument("--json", metavar="FILE", help="save the full report (every run, background, temperatures)")
+    s.add_argument("--cooldown", type=float, default=30.0, metavar="SECONDS",
+                   help="wait between checks (default 30)")
 
-    s = sub.add_parser("run", help="GPU memory traffic while a command runs (device wide)")
+    s = _sub(sub, "run", "measure GPU memory traffic while a command runs",
+             "Starts observing, runs your command, stops when it ends, prints the table.\n"
+             "Device wide: counts every process on the GPU during that time, not only your command.\n\n"
+             + OUTPUT,
+             "examples:\n"
+             "  pravaha run -- python my_app.py\n"
+             "  pravaha run --idle 2 --csv trace.csv -- ./my_cuda_program\n"
+             "  pravaha run -- python -m pravaha_mem.known_bytes h2d 8 256   (copies 2 GiB into the GPU)")
     _measure_opts(s)
-    s.add_argument("command", nargs=argparse.REMAINDER, help="-- CMD [ARGS]")
-    s = sub.add_parser("observe", help="GPU memory traffic over a time window (device wide)")
+    s.add_argument("command", nargs=argparse.REMAINDER, help="-- then the command and its arguments")
+    s = _sub(sub, "observe", "measure GPU memory traffic over a time window (e.g. a running server)",
+             "Observes the whole GPU for --seconds, or until Ctrl+C, without starting anything.\n"
+             "Use it for a server that is already running. Device wide.\n\n" + OUTPUT,
+             "examples:\n"
+             "  pravaha observe --seconds 60\n"
+             "  pravaha observe --live > samples.csv          (each sample as it arrives; Ctrl+C stops)")
     _measure_opts(s)
     s.add_argument("--seconds", type=float, default=0.0, help="how long (default: until Ctrl+C)")
-    s.add_argument("--live", action="store_true", help="also print each sample as CSV while observing")
+    s.add_argument("--live", action="store_true", help="also print each sample as a CSV line as it arrives")
 
-    s = sub.add_parser("smmu", help="GPU address translations (counts, never bytes)")
+    s = _sub(sub, "smmu", "GPU address translations (counts, never bytes)",
+             "The GPU's SMMU translates the addresses programs use into real memory addresses, one\n"
+             "page at a time. These counts show translation requests and misses: useful to study page\n"
+             "sizes and translation caching. They are not bytes; for bytes use run or observe.",
+             "examples:\n  pravaha smmu status\n  pravaha smmu run -- python my_app.py\n"
+             "  pravaha smmu observe --seconds 10")
     ss = s.add_subparsers(dest="smmu_verb", metavar="status|run|observe")
-    ss.add_parser("status", help="SMMU counters of this GB10 and which one is the GPU's")
-    r = ss.add_parser("run", help="translations while a command runs")
-    r.add_argument("--unit"); r.add_argument("--live", action="store_true")
+    ss.add_parser("status", help="the SMMU counters of this GB10 and which one belongs to the GPU")
+    r = ss.add_parser("run", help="translation counts while a command runs")
+    r.add_argument("--unit", help="which SMMU counter unit (default: the GPU's)")
+    r.add_argument("--live", action="store_true", help="also print counts every 100 ms")
     r.add_argument("command", nargs=argparse.REMAINDER)
-    o = ss.add_parser("observe", help="translations over a time window")
-    o.add_argument("--unit"); o.add_argument("--live", action="store_true")
-    o.add_argument("--seconds", type=float, default=0.0)
+    o = ss.add_parser("observe", help="translation counts over a time window")
+    o.add_argument("--unit", help="which SMMU counter unit (default: the GPU's)")
+    o.add_argument("--live", action="store_true", help="also print counts every 100 ms")
+    o.add_argument("--seconds", type=float, default=0.0, help="how long (default: until Ctrl+C)")
 
-    s = sub.add_parser("kernels", help="L2 traffic per kernel (Nsight Compute replay; slower, needs profiling rights)")
-    s.add_argument("--match", help="regular expression for kernel names")
+    s = _sub(sub, "kernels", "L2 traffic per named GPU kernel (Nsight Compute)",
+             "Runs your command under NVIDIA Nsight Compute, which replays each GPU kernel to measure\n"
+             "it. Slower than run, and needs profiling rights. Use it to see which kernel moves the\n"
+             "bytes that run reports in total.",
+             "example:\n  pravaha kernels --match gemm -- python my_app.py")
+    s.add_argument("--match", metavar="REGEX", help="only kernels whose name matches REGEX")
     s.add_argument("command", nargs=argparse.REMAINDER)
     return p
 

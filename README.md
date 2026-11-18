@@ -51,15 +51,33 @@ pravaha verify           # optional: about 3 minutes, light work only
 pravaha run --idle 2 -- python my_app.py
 ```
 
+For example, measuring pravaha's test program while it copies 2 GiB into the GPU:
 ```
 pravaha: measuring 1 s of idle baseline ...
-pravaha: observing the whole GPU while 'python -m pravaha_mem.demo h2d 8 256' runs; results print when it ends
+pravaha: observing the whole GPU while 'python -m pravaha_mem.known_bytes h2d 8 256' runs; results print when it ends
 phase               sec   copy GiB  kread GiB kwrite GiB   C2C GiB    GB/s
 total              1.52     2.0146     0.0669     0.2500    4.6802     3.3
 idle               1.00     0.0000     0.0244     0.0000    0.0989     0.1
 run                0.52     2.0146     0.0425     0.2500    4.5813     9.4
 ```
-That demo copies 2 GiB; the extra 0.0146 GiB of copies and 0.25 GiB of writes are its own CUDA startup and buffer clearing.
+That command is pravaha's test program copying 2 GiB into the GPU (see below). The extra 0.0146 GiB of copies is CUDA's startup; the 0.25 GiB of kwrite is the program clearing its GPU buffer before the copies.
+
+## 🧪 The test program: known_bytes
+
+To check pravaha you need data whose amount is known in advance. `known_bytes` is a small, readable program ([python/pravaha_mem/known_bytes.py](python/pravaha_mem/known_bytes.py)) that moves exactly that, with NVIDIA's standard CUDA calls, and says what it did.
+
+```bash
+python -m pravaha_mem.known_bytes DIRECTION TIMES SIZE_MIB        # moves TIMES x SIZE_MIB
+```
+
+| DIRECTION | stands for | what happens | who moves it | pravaha column |
+|---|---|---|---|---|
+| `h2d` | host to device | copy from the computer's memory into the GPU | copy engines (`cudaMemcpy`) | copy |
+| `d2h` | device to host | copy from the GPU back to the computer's memory | copy engines (`cudaMemcpy`) | copy |
+| `d2d` | device to device | copy from one GPU buffer to another | GPU code reading and writing | kread, kwrite |
+| `memset` | memory set | fill a GPU buffer with a value | GPU code writing (`cudaMemset`) | kwrite |
+
+"Host" is NVIDIA's word for the computer side, "device" for the GPU. Examples: `h2d 8 256` copies 8 x 256 MiB = 2 GiB into the GPU; `memset 16 256` makes GPU code write 4 GiB. Before its work it reserves its buffers and clears the two GPU buffers (2 x SIZE_MIB in kwrite); every CUDA program also moves about 15 MiB of copies when it starts. `pravaha verify` runs these four directions and compares.
 
 ## 🔐 What `pravaha install` puts on your system
 
@@ -99,6 +117,8 @@ m.to_json("run.json")     # totals, phases, baseline, sampling quality, provenan
 | kwrite | `..._srcunit_tex_op_write_realtime` (x 32) | bytes GPU code wrote |
 | C2C | all L2 read misses + all L2 writes (x 32) | all GPU memory traffic. On GB10 all GPU memory lies behind the CPU die, so this traffic crosses NVLink C2C. |
 
+How the counting works: every GPU request to memory passes the GPU's L2 cache. If the data is already in L2 (a hit), nothing crosses C2C and nothing is counted. If not (a miss), it is fetched over C2C and counted (kread for GPU code). Every write passes L2 and goes to memory over C2C (kwrite). Copies pass L2 twice, as a read and a write, hence copy = sectors x 32 / 2. Diagrams: [GB10 architecture](docs/GB10_ARCHITECTURE.md).
+
 * **Device wide.** The counters see every process on the GPU. `run -- CMD` reports the GPU's traffic while CMD runs, not CMD's alone. Use `--idle` or phases for a baseline; the JSON reports raw, baseline and subtracted values separately.
 * **One reader at a time.** The GPU has one sampling unit. While another profiler holds it, pravaha says "counters busy".
 * **GPU side.** CPU memory traffic is not included.
@@ -114,8 +134,20 @@ m.to_json("run.json")     # totals, phases, baseline, sampling quality, provenan
 ```
 Samples carry the system clock; on GB10 it agrees with the GPU's sample clock within 1 microsecond. On real frameworks, observed from outside: PyTorch `.cuda()` 8 minus 4 copies of 1 GiB gives 3.9999 GiB; vLLM serving Qwen3 4B reads 7.52 GiB per generated token, against 7.49 GiB of weights. PASS means agreement for these workloads on that machine and software, not a claim about every workload.
 
-## 🎓 Learn
-[docs/TUTORIAL.md](docs/TUTORIAL.md): lessons with expected output. [docs/MANUAL.md](docs/MANUAL.md): every command, option and field. Examples: [examples/](examples).
+## 📚 Documentation
+
+| read this | if you want to |
+|---|---|
+| [GB10 architecture](docs/GB10_ARCHITECTURE.md) | understand the GB10, NVLink C2C and what pravaha counts (with diagrams) |
+| [Tutorial](docs/TUTORIAL.md) | learn by running: each lesson one command, with the expected output |
+| [Manual](docs/MANUAL.md) | look up every command, option, column and word |
+| [Developer guide](docs/DEVELOPER_GUIDE.md) | use pravaha inside your Python programs and harnesses |
+| [Researcher guide](docs/RESEARCHER_GUIDE.md) | methodology, accuracy, time base, and what to report in a paper |
+| [Validation record](docs/VALIDATION.md) and [test matrix](docs/TEST_MATRIX.md) | see every test, on which machine, with what result; add yours |
+| [Design](docs/DESIGN.md) | the system design and its rules |
+| [Contributing](CONTRIBUTING.md) | report results from your GB10, or change the code |
+
+Examples: [examples/](examples).
 
 ## 📦 Requirements
 NVIDIA GB10 system, Linux, NVIDIA driver 565 or newer with CUDA 13 (CUPTI included), `gcc` and `g++`, Python 3.8 or newer.

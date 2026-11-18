@@ -92,7 +92,7 @@ Uses Nsight Compute replay: slower than `run`, and needs profiling permission. T
 Every result reports separately: the raw device wide value; the idle baseline rate (if `--idle` or an `idle` phase was measured); the baseline subtracted estimate; and the variation of the baseline (so a user can see if background traffic was stable). The subtracted value is labelled an estimate. pravaha never presents it as one program's exact traffic.
 
 ## 9. Safety for the user's machine
-1. pravaha's own workloads (`verify`, the demo) are light: copies and simple GPU reads and writes of a few GiB, about 1 s of GPU work per check. No dense compute.
+1. pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple GPU reads and writes of a few GiB, about 1 s of GPU work per check. No dense compute.
 2. 30 s cool down between verify checks is configurable; a minimum gap of 1 s between stopping one reader and starting the next (the driver needs time to release the counters).
 3. Thermal guard: before each verify check, read `temperature.gpu.tlimit` (headroom to the thermal limit). Start only if headroom >= 35 C; abort if it drops below 15 C during a check. On GB10 the slowdown is at headroom -2 C and shutdown at -5 C; the hardware cuts power without any OS log, so the guard must act early.
 4. `status` shows temperature and headroom, so users see the machine state before measuring.
@@ -138,7 +138,7 @@ kernels.py  Nsight Compute per kernel pass
 | observer | `observer.py` | start reader, wait until samples flow, collect, phases, boundary share, loss accounting, export with provenance |
 | install | `install.py` | build, capability test, copy, setcap, MANIFEST; uninstall with checks |
 | status | `status.py` | versions, readers, capability, counters free, temperature and headroom |
-| verify | `verify.py`, `demo.py` | known byte workloads, thermal guard, cool downs, background, middle of 3, detailed report |
+| verify | `verify.py`, `known_bytes.py` | known byte workloads, thermal guard, cool downs, background, middle of 3, detailed report |
 | SMMU | `smmu/` | discover PMCGs, `pravaha-pmcg`, run and observe in translations |
 | kernels | `kernels.py` | Nsight Compute per kernel L2 traffic |
 | CLI | `cli.py` | thin mapping of commands to the above |
@@ -167,7 +167,7 @@ Every JSON result contains: pravaha version; reader and protocol version; GPU na
 | live CSV stream | `l2_commands.cmd_watch` | `observe --live` |
 | readiness report | `l2_commands.cmd_show`, `permissions.py` | `status`, adds temperature and headroom |
 | build, install, uninstall | `c2c_sampler` install functions | `install.py` with MANIFEST, safeguards, capability test |
-| known byte demo | `demo.py` | `demo.py` |
+| known byte demo | `known_bytes.py` | `known_bytes.py` |
 | verification with JSON detail | `c2c_checks.py` | `verify.py`, adds thermal guard, cool downs, full report |
 | reader location variable | `PRAVAHA_C2C` | `PRAVAHA_READER` |
 | SMMU discovery, identity | `discover.py`, `identity.py` | `smmu/` |
