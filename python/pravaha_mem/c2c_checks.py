@@ -27,8 +27,9 @@ CHECKS = [
 
 
 def _worker(mode, n, mib):
+    import os
     out = subprocess.run([sys.executable, "-m", "pravaha_mem.demo", mode, str(n), str(mib)],
-                         capture_output=True, text=True)
+                         capture_output=True, text=True, env={**os.environ, "PRAVAHA_DEMO_WINDOW": "1"})
     if out.returncode:
         raise RuntimeError(out.stderr.strip() or "demo failed")
     w = [l.split() for l in out.stdout.splitlines() if l.startswith("WINDOW")][0]

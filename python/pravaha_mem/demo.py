@@ -5,8 +5,8 @@ it calls the CUDA runtime through ctypes. Used by `pravaha test` and the tutoria
     MODE: h2d (host to GPU copy), d2h (GPU to host copy), d2d (GPU to GPU copy,
           done by a kernel), memset (a kernel writing)
 
-It prints, as system clock ns:
-    WINDOW t0 t1   when the work ran
+With PRAVAHA_DEMO_WINDOW=1 it prints when the work ran, as system clock ns:
+    WINDOW t0 t1
 PRAVAHA_DEMO_QUIET=S makes it wait S seconds between setup and work (default 0.5, so setup traffic stays apart from the work).
 """
 import ctypes
@@ -52,7 +52,8 @@ def main(argv=None):
         else: sys.exit("MODE must be h2d, d2h, d2d or memset")
     ck(rt.cudaDeviceSynchronize())
     t1 = time.time_ns()
-    print("WINDOW", t0, t1, flush=True)
+    if os.environ.get("PRAVAHA_DEMO_WINDOW"):   # set by pravaha test
+        print("WINDOW", t0, t1, flush=True)
     print(f"{mode}: moved {n} x {mib} MiB = {n * mib} MiB", file=sys.stderr)
     time.sleep(0.05)
 

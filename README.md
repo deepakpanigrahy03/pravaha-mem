@@ -20,20 +20,30 @@ pravaha reads the GPU's own L2 cache counters live, every 10 ms, from a separate
 
 *Pravaha* (प्रवाह) is Sanskrit for *flow*.
 
-## 🚀 Start in three steps
+## 🚀 Start
 
 ```bash
-pip install pravaha-mem          # 1. in the Python environment that will measure
-pravaha install-sampler          # 2. once per machine; asks for your password once
+# from PyPI
+pip install pravaha-mem
+
+# or from GitHub (latest)
+git clone https://github.com/deepakpanigrahy03/pravaha-mem
+cd pravaha-mem && pip install .
+```
+
+Install it in the Python environment that will do the measuring (a venv is fine: `python3 -m venv ~/pravaha-venv && . ~/pravaha-venv/bin/activate`). Then, once per machine:
+
+```bash
+pravaha install-sampler          # asks for your password once
 pravaha test                     # optional: check it against known bytes
-pravaha c2c --idle 2 -- python my_app.py    # 3. measure any command
+pravaha c2c --idle 2 -- python my_app.py
 ```
 
 For example, a program that copies 2 GiB from host to GPU:
 
 ```
 pravaha: measuring 1 s of idle baseline ...
-pravaha: measuring while './copy_2gib' runs; results print when it ends (Ctrl+C stops it and still prints them)
+pravaha: measuring while 'python -m pravaha_mem.demo h2d 8 256' runs; results print when it ends (Ctrl+C stops it and still prints them)
 phase               sec   copy GiB  kread GiB kwrite GiB   C2C GiB    GB/s
 total              1.52     2.0146     0.0669     0.2500    4.6802     3.3
 idle               1.00     0.0000     0.0244     0.0000    0.0989     0.1

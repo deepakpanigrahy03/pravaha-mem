@@ -5,7 +5,7 @@ Five short lessons. Each one has a command to run and the output to expect, meas
 ## Lesson 0: install and check (5 minutes)
 
 ```bash
-pip install pravaha-mem
+pip install pravaha-mem      # or from GitHub: git clone https://github.com/deepakpanigrahy03/pravaha-mem && cd pravaha-mem && pip install .
 pravaha install-sampler      # once per machine; asks for your password once
 pravaha permissions
 pravaha test
@@ -22,7 +22,7 @@ pravaha test
 all checks passed
 ```
 
-If all pass, every number pravaha gives you on this machine rests on the same counters.
+If all pass, every number pravaha gives you on this machine rests on the same counters. On an Acer GN100 and a DGX Spark every check gives a ratio of 1.0000 (the GN100's desktop can move the GPU to GPU check by a few tenths of a percent).
 
 ## Lesson 1: measure any command
 

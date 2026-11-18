@@ -12,7 +12,7 @@ It samples the counters every 10 ms through CUPTI PM sampling, from its own proc
 ## 2. Install
 
 ```bash
-pip install pravaha-mem
+pip install pravaha-mem                 # or: git clone https://github.com/deepakpanigrahy03/pravaha-mem && cd pravaha-mem && pip install .
 pravaha install-sampler
 pravaha permissions
 ```
