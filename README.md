@@ -7,7 +7,7 @@
   <img alt="Python 3.8+" src="https://img.shields.io/badge/python-3.8%2B-blue.svg">
   <img alt="Platform: NVIDIA GB10" src="https://img.shields.io/badge/platform-NVIDIA%20GB10-76B900.svg">
   <img alt="Dependencies: none" src="https://img.shields.io/badge/dependencies-none-brightgreen.svg">
-  <!-- PyPI and DOI badges are added after the first release -->
+  <a href="https://doi.org/10.5281/zenodo.24355574"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.24355574.svg"></a>
 </p>
 
 # pravaha-mem

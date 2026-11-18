@@ -2,7 +2,8 @@ cff-version: 1.2.0
 message: "If you use pravaha-mem, please cite the software (DOI below) and the paper in preferred-citation."
 title: "pravaha-mem: measuring GPU memory traffic on the NVIDIA GB10 without C2C telemetry"
 version: 1.0.0
-date-released: "2026-11-17"
+doi: 10.5281/zenodo.24355574
+date-released: "2026-11-18"
 license: MIT
 repository-code: "https://github.com/deepakpanigrahy03/pravaha-mem"
 keywords:
@@ -11,11 +12,13 @@ keywords:
   - nvlink-c2c
   - gpu-memory-traffic
   - performance-counters
+  - l2-cache
+  - cupti
   - smmu
 authors:
   - family-names: Panigrahy
     given-names: Deepak
-    affiliation: "Mantra Labs; Texas A&M University"
+    affiliation: "MANTRA Labs; Texas A&M University"
     email: deepakp@tamu.edu
   - family-names: Kota
     given-names: Sirisha
