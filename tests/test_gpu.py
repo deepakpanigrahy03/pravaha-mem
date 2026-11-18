@@ -25,16 +25,21 @@ skip = pytest.mark.skipif(not _ready(), reason="pravaha reader not installed (pr
 
 
 def _measure(direction, times, mib):
+    """Bytes in the work window, minus the background rate measured for 1 s just before
+    (the desktop and other programs also use the GPU), as pravaha verify does."""
     import os, subprocess, sys
     from pravaha_mem.observer import observe
     with observe() as m:
+        b0 = time.time_ns(); time.sleep(1.0); b1 = time.time_ns()
         out = subprocess.run([sys.executable, "-m", "pravaha_mem.known_bytes", direction, str(times), str(mib)],
                              capture_output=True, text=True, env={**os.environ, "PRAVAHA_KNOWN_WINDOW": "1"})
     assert out.returncode == 0, out.stderr
     w = [l.split() for l in out.stdout.splitlines() if l.startswith("WINDOW")][0]
-    t0, t1 = int(w[1]), int(w[2])
+    t0, t1 = int(w[1]) - 40_000_000, int(w[2]) + 40_000_000
+    q, s = m._sum(b0, b1), m._sum(t0, t1)
+    k = s["seconds"] / q["seconds"]
     time.sleep(2)                                   # cool down between tests
-    return m._sum(t0 - 40_000_000, t1 + 40_000_000)
+    return {f: s[f] - q[f] * k for f in ("copy", "kernel_read", "kernel_write", "memory")}
 
 
 @skip

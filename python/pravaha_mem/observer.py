@@ -63,7 +63,8 @@ def find_reader() -> str:
               shutil.which("pravaha-reader")):
         if p and os.path.exists(p):
             return p
-    raise FileNotFoundError("pravaha-reader not found: run `pravaha install` (once per machine)")
+    raise FileNotFoundError("GPU counter reader not installed on this machine. "
+                            "Run once (asks for the admin password): pravaha install")
 
 
 class observe:
@@ -204,6 +205,18 @@ class observe:
         return {"phase": phase, "rate_bytes_per_s": {k: p[k] / p["seconds"] for k in FIELDS},
                 "memory_rate_stdev_bytes_per_s": statistics.pstdev(per) if len(per) > 1 else None}
 
+    def estimate(self) -> dict | None:
+        """Phase 'run' minus (idle rate x run time), per column, never below 0; None without both phases.
+        An estimate of the command's own traffic, assuming the background stayed as during idle."""
+        ph = self.phases()
+        i, r = ph.get("idle"), ph.get("run")
+        if not i or not r or not i["seconds"] or not r["seconds"]:
+            return None
+        k = r["seconds"] / i["seconds"]
+        out = {JSON_NAMES.get(f, f): max(0.0, r[f] - i[f] * k) for f in (*FIELDS, "memory")}
+        out["seconds"] = r["seconds"]
+        return out
+
     def summary(self) -> str:
         rows = [("total", self.total())] + (list(self.phases().items()) if len(self.marks) > 1 else [])
         head = f"{'phase':14}{'sec':>9}{'copy GiB':>11}{'kread GiB':>11}{'kwrite GiB':>11}{'C2C GiB':>10}{'GB/s':>8}"
@@ -212,6 +225,16 @@ class observe:
             gbps = t["memory"] / t["seconds"] / 1e9 if t["seconds"] else 0
             lines.append(f"{n:14}{t['seconds']:9.2f}{t['copy'] / GIB:11.4f}{t['kernel_read'] / GIB:11.4f}"
                          f"{t['kernel_write'] / GIB:11.4f}{t['memory'] / GIB:10.4f}{gbps:8.1f}")
+        ph = dict(rows[1:])
+        if "idle" in ph and "run" in ph and ph["idle"]["seconds"] and ph["run"]["seconds"]:
+            i, r = ph["idle"], ph["run"]
+            k = r["seconds"] / i["seconds"]           # background bytes in run = idle rate x run time
+            est = {f: max(0.0, r[f] - i[f] * k) for f in ("copy", "kernel_read", "kernel_write", "memory")}
+            gbps = est["memory"] / r["seconds"] / 1e9
+            lines.append(f"{'run - idle':14}{r['seconds']:9.2f}{est['copy'] / GIB:11.4f}{est['kernel_read'] / GIB:11.4f}"
+                         f"{est['kernel_write'] / GIB:11.4f}{est['memory'] / GIB:10.4f}{gbps:8.1f}")
+            lines.append("note: 'run - idle' = run minus (idle rate x run time): an estimate of your command's "
+                         "own traffic, assuming the background stayed as it was during idle")
         short = [n for n, t in rows[1:] if t["seconds"] * 1000 < 10 * self.interval_ms]
         if short:
             lines.append(f"note: phase {', '.join(short)} spans fewer than 10 samples; for sharper "
@@ -233,7 +256,8 @@ class observe:
                 if s.t1 <= self.t_start or (self.t_end and s.t0 >= self.t_end):
                     continue
                 mid = (s.t0 + s.t1) // 2
-                ph = next((n for (n, a), (_, b) in zip(edges, edges[1:]) if a <= mid < b), "")
+                ph = next((n for (n, a), (_, b) in zip(edges, edges[1:]) if a <= mid < b),
+                          "before_start" if mid < self.t_start else "after_end")
                 w.writerow([s.t0, s.t1, ph, *(int(getattr(s, k)) for k in FIELDS)])
 
     def to_dict(self) -> dict:
@@ -251,6 +275,7 @@ class observe:
             "total": name(self.total()),
             "phases": {n: name(t) for n, t in self.phases().items()},
             "baseline": self.baseline(),
+            "estimate_run_minus_idle": self.estimate(),
             "quality": self.quality(),
             "metadata": self.meta,
         }

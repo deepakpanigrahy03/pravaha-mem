@@ -14,6 +14,8 @@
 
 **Live GPU memory traffic on the NVIDIA GB10 (DGX Spark, Acer GN100 and other GB10 systems), for any program, without changing it.**
 
+> **New here? Read [The whole idea](docs/THE_WHOLE_IDEA.md) first:** the machine, the problem, the solution and how we know it is right, in one read.
+
 On the GB10 the GPU has no memory of its own: every byte it reads or writes goes to the shared LPDDR5X behind the CPU die, over NVLink C2C. NVIDIA exposes no counter for that link on GB10. pravaha reads the GPU's own L2 cache counters every 10 ms, from a separate process, and reports the bytes moved: by copy engines, by GPU code reading and writing, and in total.
 
 *Pravaha* (प्रवाह) is Sanskrit for *flow*.
@@ -36,20 +38,38 @@ On the GB10 the GPU has no memory of its own: every byte it reads or writes goes
 
 ## 🚀 Start
 
-```bash
-# from PyPI
-pip install pravaha-mem
-# or from GitHub (latest)
-git clone https://github.com/deepakpanigrahy03/pravaha-mem && cd pravaha-mem && pip install .
-```
-Install it in the Python environment that will measure (a venv is fine). The program you measure needs nothing installed. Then:
+pravaha has two parts: a **Python package** (installed with pip, like any library) and two small **counter readers** that need one admin step per machine, because NVIDIA's driver lets only privileged programs read GPU counters. The program you measure needs nothing.
 
+**On a fresh machine (Ubuntu and similar), once:**
 ```bash
-pravaha install          # once per machine: asks for your password once
-pravaha status           # ready?
-pravaha verify           # optional: about 3 minutes, light work only
+sudo apt install python3-venv gcc g++        # venv support, and compilers to build the readers
+```
+
+**The command line, in its own environment:**
+```bash
+python3 -m venv ~/pravaha-venv
+source ~/pravaha-venv/bin/activate           # in every new terminal before using pravaha
+pip install pravaha-mem                      # until it is on PyPI: pip install git+https://github.com/deepakpanigrahy03/pravaha-mem
+pravaha install                              # once per machine: asks for the admin password once
+pravaha status                               # "ready", or exactly what is missing and how to fix it
+pravaha verify                               # optional: about 3 minutes, light work only
 pravaha run --idle 2 -- python my_app.py
 ```
+
+**As a library inside a platform** (A-LEMS, your own harness): add `pravaha-mem` to the platform's `requirements.txt`, like any library. The readers are shared by every environment on the machine, so `pravaha install` is still needed once per machine (a platform's own install script can run it). Check at startup:
+```python
+import pravaha_mem as pv
+s = pv.status()
+if not s["ready"]:
+    print("GPU traffic measurement disabled:", "; ".join(s["fix"]))
+```
+
+| where | what | how often |
+|---|---|---|
+| your venv, or the platform's venv | the Python package (`pravaha` command, `import pravaha_mem`) | in each environment that measures |
+| `/usr/local/libexec/pravaha` | the two readers, one permission each | once per machine (`pravaha install`) |
+
+If something is missing, pravaha says it in one line with the fix, for example: `GPU counter reader not installed on this machine. Run once (asks for the admin password): pravaha install`. If you use pipx: `pipx install pravaha-mem` gives the command in every terminal without activating a venv.
 
 For example, measuring pravaha's test program while it copies 2 GiB into the GPU:
 ```
@@ -138,6 +158,7 @@ Samples carry the system clock; on GB10 it agrees with the GPU's sample clock wi
 
 | read this | if you want to |
 |---|---|
+| [The whole idea](docs/THE_WHOLE_IDEA.md) | understand everything in one read: start here |
 | [GB10 architecture](docs/GB10_ARCHITECTURE.md) | understand the GB10, NVLink C2C and what pravaha counts (with diagrams) |
 | [Tutorial](docs/TUTORIAL.md) | learn by running: each lesson one command, with the expected output |
 | [Manual](docs/MANUAL.md) | look up every command, option, column and word |
@@ -147,7 +168,7 @@ Samples carry the system clock; on GB10 it agrees with the GPU's sample clock wi
 | [Design](docs/DESIGN.md) | the system design and its rules |
 | [Contributing](CONTRIBUTING.md) | report results from your GB10, or change the code |
 
-Examples: [examples/](examples).
+Examples, each with what it does, what it needs and what to expect: [examples/README.md](examples/README.md).
 
 ## 📦 Requirements
 NVIDIA GB10 system, Linux, NVIDIA driver 565 or newer with CUDA 13 (CUPTI included), `gcc` and `g++`, Python 3.8 or newer.

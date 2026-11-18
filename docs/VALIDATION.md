@@ -50,7 +50,11 @@ A second reader started while one was running reported "GPU counters busy" and e
 | vLLM, 400 generated tokens in 17.22 s | 3,009 GiB kernel reads = 7.52 GiB per token; 187.6 GB/s | 7.49 GiB of weights read once per token |
 | idle around the request | 0.02 to 0.03 GiB per 3 s | about 0 |
 
-To be repeated on 1.0: see the [test matrix](TEST_MATRIX.md).
+On 1.0 (2026-11-18, GN100), from outside, Mistral 7B Instruct v0.3 served by vLLM (weights 14,496,078,512 bytes = 13.50 GiB): 200 tokens in 12.54 s; kernel reads 13.26 GiB per token; 15.9 tokens per second; 227 GB/s; no copies during generation; idle before and after 0.007 and 0.02 GiB. The embedding table (32,768 x 4,096 x 2 bytes = 0.25 GiB) is a lookup of one row per token, so 13.50 - 0.25 = 13.25 GiB is the expected read per token.
+
+`pravaha kernels` (Nsight Compute, 1.0, GN100): PyTorch `torch.ones(2**24)` then `.sum()`: 0.067 GB written, 0.067 GB read (64 MiB each). Driver operations (`cudaMemcpy`, `cudaMemset`) are not kernels to Nsight Compute ("No kernels were profiled" for known_bytes); they are visible to `run` and `observe`.
+
+`pravaha uninstall` (1.0, GN100): removed the folder; `status` then reported not ready with the fix line; `install` restored it.
 
 ## 8. Known limits found during validation
 * Live sampling on GB10 offers no aperture (memory type) split; `ConfigAddMetrics` rejects the aperture counters.

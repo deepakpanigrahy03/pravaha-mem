@@ -40,7 +40,7 @@ pv.status(); pv.verify(json_path=None)
 `total()` and each phase give bytes: `copy`, `kernel_read`, `kernel_write`, `all_read`, `all_write`, `memory` (all_read + all_write), plus `seconds` and `boundary_share` (the part of the phase total that came from samples split at a phase edge).
 
 ## 4. Results
-CSV: `t_start_ns, t_end_ns, phase, copy_bytes, kernel_read_miss_bytes, kernel_write_bytes, all_read_miss_bytes, all_write_bytes`; times on the system clock (same as `time.time_ns()`, `date +%s%N`).
+CSV (phase `before_start` or `after_end` for samples at the edges of the window): `t_start_ns, t_end_ns, phase, copy_bytes, kernel_read_miss_bytes, kernel_write_bytes, all_read_miss_bytes, all_write_bytes`; times on the system clock (same as `time.time_ns()`, `date +%s%N`).
 
 JSON: version and reader protocol; scope; provenance (GPU, UUID, driver, CUDA, host, kernel); every metric with its counter and conversion; totals and phases; the idle baseline with its variation; sampling quality (samples, gaps, time not sampled, observed interval, clock pairs and offset); your metadata.
 
@@ -49,7 +49,25 @@ JSON: version and reader protocol; scope; provenance (GPU, UUID, driver, CUDA, h
 * **kread / kwrite**: what GPU code moved; data that hits in L2 does not cross C2C and is not counted.
 * **Startup**: each CUDA program moves a small fixed amount (about 15 MiB of copies for a plain CUDA program). Use phases, or compare two runs.
 * **Phases** shorter than 10 samples have fuzzy edges; the summary says so. Use `interval_ms=1` for millisecond phases.
-* **Baseline**: subtracting an idle rate is an estimate; it assumes the background stayed the same. The JSON gives its variation.
+* **Idle baseline** (`--idle SECONDS`, or a phase named `idle`): see section 5a.
+
+## 5a. The idle baseline: purpose and math
+
+**Purpose.** pravaha counts every byte on the GPU, from every program: the desktop redrawing the screen, other users, a server in the background. `--idle` first watches the GPU for a few seconds before your command starts, to learn how much that background moves on its own. Then pravaha can estimate what your command added.
+
+**Math.** With the idle row measured for $t_\text{idle}$ seconds and the run row for $t_\text{run}$ seconds, for each column (copy, kread, kwrite, C2C):
+
+$$\text{background rate} = \frac{B_\text{idle}}{t_\text{idle}} \qquad
+B_\text{command} \approx B_\text{run} - \frac{B_\text{idle}}{t_\text{idle}} \times t_\text{run}$$
+
+The table prints this as the row `run - idle` (never below zero); the JSON has the same values as `estimate_run_minus_idle`, and Python as `m.estimate()`. The raw samples (CSV, `m.samples`) are never changed, so you can apply your own method instead.
+
+**Example** (GN100, `pravaha run --idle 2 -- python -m pravaha_mem.known_bytes h2d 8 256`): idle kread 0.27 GiB in 1.00 s, so the background rate is 0.27 GiB/s; run lasted 1.10 s with kread 0.31 GiB; estimate 0.31 - 0.27 x 1.10 = 0.01 GiB. The test program reads nothing with GPU code, so about 0 is right: the 0.31 GiB was the desktop.
+
+**Limits.**
+* It assumes the background during the run was the same as during idle. If another program started or stopped in between, the estimate is wrong. The JSON (`baseline`) gives the background's variation from sample to sample: a large variation means the estimate is rough.
+* It is an estimate, never an exact count of one program. Raw values (`run`) are always shown next to it.
+* Copies by other programs are rare, so the copy column usually needs no baseline; GPU code reads and writes (kread, kwrite, C2C) are where background matters.
 * **Sample length**: the GPU closes a sample at the requested interval when it is busy; when it is mostly idle samples last longer (about 22 ms at a 10 ms request on GB10). `quality()` reports the observed interval. Totals are unaffected: every sample covers its own time span.
 * **Clocks**: the reader records the GPU sample clock and the system clock together every second. On GB10 they agree within 1 microsecond (measured offset -528 ns, spread 648 ns), so samples join with power, energy or logs on the system clock.
 

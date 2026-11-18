@@ -2,11 +2,18 @@
 
 ## 1. Install
 ```bash
-pip install pravaha-mem          # in your project's environment
-pravaha install                  # once per machine (the admin), if not done yet
-pravaha status                   # ready?
+pip install pravaha-mem          # in your project's or platform's environment (requirements.txt)
+pravaha install                  # once per machine, by an admin (or your platform's install script)
 ```
-Your program imports `pravaha_mem`; the program you measure needs nothing.
+The readers live in `/usr/local/libexec/pravaha` and are shared by all environments. The program you measure needs nothing.
+
+At startup, check readiness and tell the user what to do, instead of failing in the middle of a run:
+```python
+import pravaha_mem as pv
+s = pv.status()                  # s["ready"]: True or False; s["fix"]: plain instructions
+if not s["ready"]:
+    print("GPU traffic measurement disabled:", "; ".join(s["fix"]))
+```
 
 ## 2. Measure a block of code
 ```python

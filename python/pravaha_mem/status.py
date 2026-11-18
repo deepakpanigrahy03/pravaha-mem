@@ -77,7 +77,30 @@ def counters_free() -> str:
 
 
 def status() -> dict:
-    return {"provenance": provenance(), "readers": readers(), "counters": counters_free(), "thermal": thermal()}
+    """Readiness, as data. 'ready' is True when pravaha can measure now; 'fix' lists, in plain
+    words, what to do otherwise. Platforms can call this at startup:
+        s = pravaha_mem.status()
+        if not s["ready"]: print("GPU traffic disabled:", "; ".join(s["fix"]))
+    """
+    s = {"provenance": provenance(), "readers": readers(), "counters": counters_free(), "thermal": thermal()}
+    fix = []
+    r = s["readers"]["pravaha-reader"]
+    if not r["path"]:
+        if not (shutil.which("g++") and (shutil.which("cc") or shutil.which("gcc"))):
+            fix.append("compilers missing: sudo apt install gcc g++")
+        fix.append("GPU counter reader not installed: run once (asks for the admin password): pravaha install")
+    elif not r["capability"]:
+        fix.append("the reader has lost its permission: run pravaha install again")
+    elif s["counters"] == "busy":
+        fix.append("GPU counters busy: another profiler is using them (another pravaha, Nsight, DCGM); "
+                   "wait for it or stop it")
+    elif s["counters"] != "free":
+        fix.append(f"GPU counters not readable: {s['counters']}")
+    h = s["thermal"]["headroom_c"]
+    if h is not None and h < 15:
+        fix.append(f"GPU is hot (headroom {h:.0f} C): let it cool before measuring")
+    s["ready"], s["fix"] = not fix, fix
+    return s
 
 
 def report() -> int:
@@ -101,6 +124,10 @@ def report() -> int:
     stray = [p for p in ("/usr/local/bin/pravaha-c2c", "/usr/local/bin/pravaha-pmcg") if os.path.exists(p)]
     if stray:
         print(f"  note           : files from an earlier version: {' '.join(stray)} (remove with sudo rm)")
-    print("  ready: measure with  pravaha run -- CMD   or   pravaha observe" if ok else
-          "  not ready: see the lines above")
-    return 0 if ok else 1
+    if s["ready"]:
+        print("  ready: measure with  pravaha run -- CMD   or   pravaha observe")
+        return 0
+    print("  not ready. To fix:")
+    for f in s["fix"]:
+        print(f"    - {f}")
+    return 1
