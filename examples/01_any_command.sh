@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Lesson 1: measure any program from outside. Nothing in the program changes.
+# Usage: bash examples/01_any_command.sh [command ...]
+#   default: pravaha's own demo, which copies 8 x 256 MiB = 2 GiB host to GPU
+
+if [ $# -eq 0 ]; then
+  set -- python3 -m pravaha_mem.demo h2d 8 256
+fi
+
+# 2 s idle baseline first, then the command; one row per 10 ms sample in the CSV
+pravaha c2c --idle 2 --csv /tmp/pravaha_lesson1.csv --json /tmp/pravaha_lesson1.json -- "$@"
+
+echo
+echo "CSV  : /tmp/pravaha_lesson1.csv  (first rows below)"
+head -3 /tmp/pravaha_lesson1.csv
+echo "JSON : /tmp/pravaha_lesson1.json"

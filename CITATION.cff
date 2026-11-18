@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use pravaha-mem, please cite the software (DOI below) and the paper in preferred-citation."
+title: "pravaha-mem: measuring GPU memory traffic on the NVIDIA GB10 without C2C telemetry"
+version: 1.0.0
+date-released: "2026-11-17"
+license: MIT
+repository-code: "https://github.com/deepakpanigrahy03/pravaha-mem"
+keywords:
+  - gb10
+  - dgx-spark
+  - nvlink-c2c
+  - gpu-memory-traffic
+  - performance-counters
+  - smmu
+authors:
+  - family-names: Panigrahy
+    given-names: Deepak
+    affiliation: "Mantra Labs; Texas A&M University"
+    email: deepakp@tamu.edu
+  - family-names: Kota
+    given-names: Sirisha
+    affiliation: "The Himalayan Foundation Research Division"
+# identifiers:            # added after the first Zenodo release
+#   - type: doi
+#     value: "10.5281/zenodo.XXXXXXX"
+preferred-citation:
+  type: article
+  title: "Measuring GPU Memory Traffic on the NVIDIA GB10 Without C2C Telemetry"
+  authors:
+    - {family-names: Panigrahy, given-names: Deepak}
+    - {family-names: Kota, given-names: Sirisha}
+    - {family-names: Tyagi, given-names: Aakash}
+    - {family-names: Kebo, given-names: David}
+    - {family-names: Mahapatra, given-names: Rabi}
+  year: 2026
+  notes: "Manuscript; publication details will be added when available."

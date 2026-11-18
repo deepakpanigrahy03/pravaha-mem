@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="1200" height="300" role="img" aria-label="pravaha: GPU memory flow on the NVIDIA GB10">
+  <title>pravaha</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B2547"/>
+      <stop offset="1" stop-color="#0F152B"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" rx="28" fill="url(#bg)"/>
+  <g transform="translate(40,22)">
+    <rect x="42" y="84" width="40" height="88" rx="10" fill="#E9EDF6"/>
+    <rect x="50" y="96" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+    <rect x="50" y="110" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+    <rect x="50" y="124" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+    <rect x="190" y="60" width="24" height="136" rx="10" fill="#E9EDF6"/>
+    <path d="M82 112 C 116 70, 150 150, 190 108" fill="none" stroke="#4C9BFF" stroke-width="12" stroke-linecap="round"/>
+    <path d="M82 144 C 116 186, 150 106, 190 148" fill="none" stroke="#FF8A3D" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="124" cy="100" r="5" fill="#FFFFFF"/>
+    <circle cx="160" cy="118" r="5" fill="#FFFFFF"/>
+    <circle cx="124" cy="156" r="5" fill="#FFFFFF"/>
+    <circle cx="160" cy="138" r="5" fill="#FFFFFF"/>
+  </g>
+  <text x="300" y="148" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="92" font-weight="700" fill="#FFFFFF">pravaha</text>
+  <text x="304" y="200" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="30" fill="#B9C3DA">GPU memory flow on the NVIDIA GB10</text>
+  <text x="304" y="246" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="24" fill="#4C9BFF">● copies</text>
+  <text x="452" y="246" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="24" fill="#FF8A3D">● kernel misses</text>
+  <text x="680" y="246" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="24" fill="#E9EDF6">▮ shared memory</text>
+</svg>

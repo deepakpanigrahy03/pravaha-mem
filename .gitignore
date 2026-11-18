@@ -1,0 +1,27 @@
+build/
+lib/*.o
+lib/*.a
+lib/*.so
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+.pytest_cache/
+.venv/
+venv/
+results/
+experiments/
+*.nsys-rep
+*.ncu-rep
+*.sqlite
+
+# kept on disk, not part of the 1.0 release (SMMU era experiments and data)
+/data/
+/bin/
+/validate/
+/extras/
+/lib/
+/examples/copy_counter.*
+/examples/sample_results/
+/python/*.py
+/run_ats_tests.sh

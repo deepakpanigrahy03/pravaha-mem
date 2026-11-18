@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="pravaha logo: two streams flowing from a processor block into a memory bar">
+  <title>pravaha</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B2547"/>
+      <stop offset="1" stop-color="#0F152B"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#bg)"/>
+  <rect x="42" y="84" width="40" height="88" rx="10" fill="#E9EDF6"/>
+  <rect x="50" y="96" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+  <rect x="50" y="110" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+  <rect x="50" y="124" width="24" height="6" rx="3" fill="#1B2547" opacity="0.35"/>
+  <rect x="190" y="60" width="24" height="136" rx="10" fill="#E9EDF6"/>
+  <path d="M82 112 C 116 70, 150 150, 190 108" fill="none" stroke="#4C9BFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M82 144 C 116 186, 150 106, 190 148" fill="none" stroke="#FF8A3D" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="124" cy="100" r="5" fill="#FFFFFF"/>
+  <circle cx="160" cy="118" r="5" fill="#FFFFFF"/>
+  <circle cx="124" cy="156" r="5" fill="#FFFFFF"/>
+  <circle cx="160" cy="138" r="5" fill="#FFFFFF"/>
+</svg>

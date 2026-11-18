@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pravaha-mem"
+version = "1.0.0"
+description = "GPU memory traffic on the NVIDIA GB10 (DGX Spark), where NVLink C2C traffic counters are not exposed"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+  {name = "Deepak Panigrahy", email = "deepakp@tamu.edu"},
+  {name = "Sirisha Kota"},
+]
+maintainers = [
+  {name = "Deepak Panigrahy", email = "deepakp@tamu.edu"},
+]
+keywords = [
+  "gb10", "dgx-spark", "nvlink", "nvlink-c2c", "gpu", "gpu-memory-traffic",
+  "unified-memory", "performance-counters", "smmu", "pmcg", "perf", "nsight-compute",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: System :: Monitoring",
+  "Topic :: System :: Hardware",
+]
+dependencies = []          # standard library only
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/deepakpanigrahy03/pravaha-mem"
+Documentation = "https://github.com/deepakpanigrahy03/pravaha-mem/blob/main/docs/MANUAL.md"
+Source = "https://github.com/deepakpanigrahy03/pravaha-mem"
+Issues = "https://github.com/deepakpanigrahy03/pravaha-mem/issues"
+Changelog = "https://github.com/deepakpanigrahy03/pravaha-mem/blob/main/CHANGELOG.md"
+
+[project.scripts]
+pravaha = "pravaha_mem.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["pravaha_mem*"]
+
+[tool.setuptools.package-data]
+pravaha_mem = ["pravaha_pmcg.c", "pravaha_c2c.cpp"]
