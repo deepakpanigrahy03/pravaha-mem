@@ -13,7 +13,7 @@ GIB = 2 ** 30
 N = 2 ** 28                                   # 2**28 float32 = 1 GiB
 host = torch.ones(N).pin_memory()
 
-with pv.c2c(interval_ms=1) as m:     # 1 ms samples: these phases last only milliseconds
+with pv.observe(interval_ms=1) as m:     # 1 ms samples: these phases last only milliseconds
     m.mark("load")                            # 1 GiB host to GPU
     dev = host.cuda(); torch.cuda.synchronize()
 

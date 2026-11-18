@@ -4,11 +4,10 @@
 
 First public release.
 
-* `pravaha c2c`: live GPU memory traffic over NVLink C2C on the NVIDIA GB10, from the GPU's L2 counters (CUPTI PM sampling), for any program, measured from a separate process. Reports copies (copy engines), kernel reads and writes, and everything that crossed C2C, per phase, with an idle baseline, as a table, CSV or JSON.
-* `pravaha c2c --seconds N`: observe the whole GPU, for example a server that is already running.
-* Python API: `with pravaha_mem.c2c() as m`, `m.mark()`, `m.summary()`, `m.phases()`, `m.total()`, `m.samples`, `m.to_csv()`; samples on the system clock (ns) to join with power, energy or logs.
-* `pravaha install-sampler`: builds the reader `pravaha-c2c` and gives that one file `cap_sys_admin`, so users measure without sudo. No system setting is changed.
-* `pravaha test`: checks the counters against a demo program that moves known bytes (`python -m pravaha_mem.demo`), with background subtraction and the middle of three runs.
-* Clear errors: counters busy (another profiler), reader missing, missing capability; progress lines and Ctrl+C handling for long runs; a note when a phase is too short for the sampling interval.
-* SMMU translation counters (Linux perf) kept as diagnostics: `pravaha show`, `watch`, `measure`, `test --smmu`.
-* Docs: README, docs/TUTORIAL.md (five lessons with expected output), docs/MANUAL.md; examples for any command, Python phases, LLM bytes per token, and joining with other data.
+* Live, device wide GPU memory traffic on the NVIDIA GB10 from the GPU's L2 cache counters (CUPTI PM sampling), observed from a separate process: copy engines, GPU code reads and writes, and all GPU memory traffic (which crosses NVLink C2C on GB10).
+* Commands: `install`, `status`, `verify`, `run -- CMD`, `observe [--seconds N] [--live]`, `smmu status|run|observe`, `kernels -- CMD`, `uninstall`.
+* Python: `pravaha_mem.observe()` with `mark()`, `metadata()`, `summary()`, `total()`, `phases()`, `baseline()`, `quality()`, `to_csv()`, `to_json()`.
+* JSON results with provenance, metric definitions and conversions, idle baseline and its variation, sampling quality and clock mapping.
+* Least privilege install: one folder in `/usr/local/libexec/pravaha` with two readers, `cap_perfmon` each, and a MANIFEST; clean, checked uninstall. No system setting is changed.
+* `verify`: light known byte workloads (`python -m pravaha_mem.demo`), thermal headroom guard, cool downs, background subtraction, middle of three runs, detailed JSON report.
+* SMMU address translation counts (never converted to bytes) and Nsight Compute per kernel traffic as separate features.

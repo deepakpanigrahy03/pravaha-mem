@@ -1,34 +1,17 @@
-"""pravaha: GPU memory traffic meter for NVIDIA GB10 / DGX Spark.
+"""pravaha: live GPU memory traffic over NVLink C2C on the NVIDIA GB10.
 
-Author: Deepak Panigrahy
-Part of pravaha (GB10 GPU memory-traffic measurement). License: MIT.
-
-"Pravaha" is Sanskrit for flow. The GB10's GPU reaches its memory through the
-CPU die, and NVIDIA's tools report none of that traffic on this chip.
-pravaha reads two counters that do see it:
-
-  copy path    the GPU's SMMU counter (Linux perf), live, SYSTEM WIDE
-               -> measure(), Measurement, watch()
-  kernel path  Nsight Compute's L2 system-memory events, in a separate pass
-               -> kernels()
-
-Quick start (after `pravaha setup` once):
-
-    import pravaha_mem as pravaha
-    with pravaha.measure() as m:
-        run_my_code()
+    import pravaha_mem as pv
+    with pv.observe() as m:
+        m.mark("load");   load_model()
+        m.mark("decode"); generate()
     print(m.summary())
 
-Without a calibration pravaha reports transactions, never bytes.
+Values are device wide (all processes on the GPU). Command line: `pravaha --help`.
+Part of pravaha-mem. MIT License. Copyright (c) 2026 MANTRA Labs.
 """
 
 __version__ = "1.0.0"      # defined before the imports: submodules read it
 
-from .calib import Calibration, CalibrationMissing, Estimate  # noqa: E402,F401
-from .discover import DiscoveryError, candidates, find_gpus  # noqa: E402,F401
-from .measure import Measurement, default_unit, measure, watch  # noqa: E402,F401
-from .copycounter import CopyCounter  # noqa: E402,F401  (0.2 name)
-from .ncu import KernelTraffic, kernel_traffic, kernels  # noqa: E402,F401
-from .perf import Counter, PerfError, RawSample  # noqa: E402,F401
-from .status import show  # noqa: E402,F401
-from .c2c_sampler import c2c, run as c2c_run, build as c2c_build  # noqa: E402,F401
+from .observer import observe, run  # noqa: E402,F401
+from .status import status  # noqa: E402,F401
+from .verify import verify  # noqa: E402,F401

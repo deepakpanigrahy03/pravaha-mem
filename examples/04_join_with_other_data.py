@@ -20,6 +20,6 @@ other = [(t, f"reading_{i}") for i, t in enumerate(range(t_first, t_last, 1_000_
 # join: for each reading, the C2C bytes in the second before it
 print(f"{'time from start (s)':>20} {'other':>12} {'C2C MiB in last second':>24}")
 for t, value in other[1:]:
-    b = sum(int(r["all_read"]) + int(r["all_write"]) for r in rows
+    b = sum(int(r["all_read_miss_bytes"]) + int(r["all_write_bytes"]) for r in rows
             if t - 1_000_000_000 <= int(r["t_start_ns"]) < t)
     print(f"{(t - t_first) / 1e9:20.1f} {value:>12} {b / 2**20:24.1f}")

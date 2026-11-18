@@ -31,7 +31,7 @@ def call(path, body=None):
 model = call("/v1/models")["data"][0]["id"]
 print(f"model: {model}")
 
-with pv.c2c() as m:
+with pv.observe() as m:
     m.mark("idle_before")
     __import__("time").sleep(2)
     m.mark("request")

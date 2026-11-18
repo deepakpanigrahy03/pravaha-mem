@@ -12,141 +12,116 @@
 
 # pravaha-mem
 
-**Live GPU memory traffic over NVLink C2C on the NVIDIA GB10 (DGX Spark, Acer GN100 and other GB10 systems), for any program, without changing it and without root.**
+**Live GPU memory traffic on the NVIDIA GB10 (DGX Spark, Acer GN100 and other GB10 systems), for any program, without changing it.**
 
-The GB10 joins an Arm CPU die and a Blackwell GPU die with NVLink C2C. The GPU has no memory of its own: every byte it reads from or writes to the shared LPDDR5X crosses C2C. NVIDIA exposes no C2C traffic counter on GB10, so how much a program moves, and when, has been invisible.
-
-pravaha reads the GPU's own L2 cache counters live, every 10 ms, from a separate process. Every L2 miss and every write leaves the GPU over C2C, so these counters give the traffic directly, split into **copies** (copy engines) and **kernels** (reads and writes by GPU code).
+On the GB10 the GPU has no memory of its own: every byte it reads or writes goes to the shared LPDDR5X behind the CPU die, over NVLink C2C. NVIDIA exposes no counter for that link on GB10. pravaha reads the GPU's own L2 cache counters every 10 ms, from a separate process, and reports the bytes moved: by copy engines, by GPU code reading and writing, and in total.
 
 *Pravaha* (प्रवाह) is Sanskrit for *flow*.
+
+## 🧭 What it gives you
+
+| | feature | command |
+|---|---|---|
+| 1 | allow counter reading, once per machine | `pravaha install` |
+| 2 | is this machine ready? | `pravaha status` |
+| 3 | check the numbers against known bytes | `pravaha verify` |
+| 4 | traffic while a program runs | `pravaha run -- CMD` |
+| 5 | traffic over a time window, e.g. a running LLM server | `pravaha observe --seconds 60` |
+| 6 | live samples | `pravaha observe --live` |
+| 7 | phases inside your own Python code | `with pv.observe() as m: m.mark("decode")` |
+| 8 | save data with full provenance | `--csv FILE`, `--json FILE` |
+| 9 | GPU address translations (counts, not bytes) | `pravaha smmu status / run / observe` |
+| 10 | traffic per kernel (Nsight Compute) | `pravaha kernels -- CMD` |
+| 11 | remove it | `pravaha uninstall` |
 
 ## 🚀 Start
 
 ```bash
 # from PyPI
 pip install pravaha-mem
-
 # or from GitHub (latest)
-git clone https://github.com/deepakpanigrahy03/pravaha-mem
-cd pravaha-mem && pip install .
+git clone https://github.com/deepakpanigrahy03/pravaha-mem && cd pravaha-mem && pip install .
 ```
-
-Install it in the Python environment that will do the measuring (a venv is fine: `python3 -m venv ~/pravaha-venv && . ~/pravaha-venv/bin/activate`). Then, once per machine:
+Install it in the Python environment that will measure (a venv is fine). The program you measure needs nothing installed. Then:
 
 ```bash
-pravaha install-sampler          # asks for your password once
-pravaha test                     # optional: check it against known bytes
-pravaha c2c --idle 2 -- python my_app.py
+pravaha install          # once per machine: asks for your password once
+pravaha status           # ready?
+pravaha verify           # optional: about 3 minutes, light work only
+pravaha run --idle 2 -- python my_app.py
 ```
-
-For example, a program that copies 2 GiB from host to GPU:
 
 ```
 pravaha: measuring 1 s of idle baseline ...
-pravaha: measuring while 'python -m pravaha_mem.demo h2d 8 256' runs; results print when it ends (Ctrl+C stops it and still prints them)
+pravaha: observing the whole GPU while 'python -m pravaha_mem.demo h2d 8 256' runs; results print when it ends
 phase               sec   copy GiB  kread GiB kwrite GiB   C2C GiB    GB/s
 total              1.52     2.0146     0.0669     0.2500    4.6802     3.3
 idle               1.00     0.0000     0.0244     0.0000    0.0989     0.1
 run                0.52     2.0146     0.0425     0.2500    4.5813     9.4
 ```
+That demo copies 2 GiB; the extra 0.0146 GiB of copies and 0.25 GiB of writes are its own CUDA startup and buffer clearing.
 
-2 GiB of copies plus the program's own CUDA startup (0.0146 GiB of copies, and 0.25 GiB of kernel writes from clearing its buffer).
+## 🔐 What `pravaha install` puts on your system
 
-The program you measure needs nothing installed. It can be Python, C++, a server, anything that uses the GPU.
+Exactly one folder, and nothing else:
+```
+/usr/local/libexec/pravaha/
+    pravaha-reader   reads the GPU's L2 counters       capability cap_perfmon
+    pravaha-pmcg     reads the GPU's SMMU counters     capability cap_perfmon
+    MANIFEST         what install created (with checksums)
+```
+Root owned, not writable by users, not in your PATH. No system setting, driver option, group, sudoers entry or service is changed. The readers run as the normal user and only read counters. `pravaha uninstall` removes exactly what MANIFEST lists and confirms nothing is left; then `pip uninstall pravaha-mem`. Manual cleanup, if ever needed: `sudo rm -r /usr/local/libexec/pravaha`.
+
+Why a password at all: NVIDIA's driver lets only privileged programs read GPU counters, and only root can attach a capability to a file.
 
 ## 🐍 From Python
 
 ```python
 import pravaha_mem as pv
 
-with pv.c2c() as m:
+with pv.observe() as m:
+    m.metadata({"model": "qwen3-4b"})
     m.mark("load");    model = load_model()
     m.mark("decode");  out = model.generate(prompt)
 
-print(m.summary())        # GiB per phase: copies, kernel reads, kernel writes, total, GB/s
-m.to_csv("trace.csv")     # one row per sample, in ns, tagged with its phase
+print(m.summary())        # bytes per phase
+m.to_csv("trace.csv")     # one row per sample, system clock in ns
+m.to_json("run.json")     # totals, phases, baseline, sampling quality, provenance
 ```
-
-`m.start()` and `m.stop()` work too, for frameworks that already have their own start and stop hooks. Timestamps use the system clock (`time.time_ns()`), so samples line up with energy or other traces.
-
-## 👥 Who it helps
-
-* **Anyone running GPU work on a GB10**: one command tells you how much your program moves through memory, and when. Run `pravaha c2c --seconds 60` to watch a server that is already running.
-* **Developers**: mark phases in your code (`m.mark("prefill")`), get results as a table, a dict, CSV or JSON, and see which step is bound by memory bandwidth.
-* **Researchers**: a 10 ms time series of GPU memory traffic, on the system clock, ready to join with power and energy; bytes per token for LLMs; a self test (`pravaha test`) to cite as evidence.
-
-## ✅ Checked against known bytes
-
-`pravaha test` runs these on your machine. Each check is a separate process that moves a known number of bytes while pravaha watches from outside (Acer GN100, driver 580, CUDA 13.0):
-
-```
-  PASS  idle machine: no copies                           0.0 MiB  expected      0.0
-  PASS  copy host to GPU                               2048.0 MiB  expected   2048.0  ratio 1.0000
-  PASS  copy GPU to host                               2048.0 MiB  expected   2048.0  ratio 1.0000
-  PASS  kernel write (cudaMemset)                      2048.0 MiB  expected   2048.0  ratio 1.0000
-  PASS  kernel read and write (GPU to GPU copy)        2047.9 MiB  expected   2048.0  ratio 1.0000
-```
-
-And on real frameworks, measured from outside without changing them:
-
-| workload | pravaha | expected |
-|---|---|---|
-| PyTorch `.cuda()`: 8 copies minus 4 copies of 1 GiB | 3.9999 GiB | 4 GiB |
-| vLLM serving Qwen3 4B: model load | 7.80 GiB copies | weights 7.49 GiB plus startup |
-| vLLM: 400 generated tokens | 7.52 GiB kernel reads per token | 7.49 GiB of weights read once per token |
-
-Copy counts are the same for pinned, registered, 2 MiB huge page and pageable host memory. A program's own CUDA startup appears as a small fixed amount (about 15 MiB for a plain CUDA program); `--idle` and phase marks separate it.
-
-## 🎓 Learn by example
-
-[docs/TUTORIAL.md](docs/TUTORIAL.md) walks through five lessons with expected output:
-
-| example | shows |
-|---|---|
-| [01_any_command.sh](examples/01_any_command.sh) | measure any program, with an idle baseline, CSV and JSON |
-| [02_python_phases.py](examples/02_python_phases.py) | phases inside your PyTorch code, measured against expected bytes |
-| [03_llm_bytes_per_token.py](examples/03_llm_bytes_per_token.py) | GiB per token of a running LLM server |
-| [04_join_with_other_data.py](examples/04_join_with_other_data.py) | line up samples with power, energy or logs |
+`m.start()` and `m.stop()` work too, for harnesses with their own hooks (A-LEMS uses these).
 
 ## 📏 What the numbers mean
 
-| column | counter (GPU L2, 32 B sectors) | meaning |
+| column | from the GPU's L2 counter | meaning |
 |---|---|---|
-| copy | `lts__t_sectors_srcunit_ce` | bytes moved by copy engines (`cudaMemcpy` and friends) |
-| kread | `lts__t_sectors_srcunit_tex_op_read_lookup_miss_realtime` | bytes GPU code read from memory (L2 misses) |
-| kwrite | `lts__t_sectors_srcunit_tex_op_write_realtime` | bytes GPU code wrote |
-| C2C | all L2 read misses plus all L2 writes | everything the GPU sent or fetched over C2C |
+| copy | `lts__t_sectors_srcunit_ce` (sectors x 32 / 2) | bytes moved by copy engines: `cudaMemcpy`, `.cuda()`, model loading. Each copied byte passes L2 twice, hence / 2. |
+| kread | `..._srcunit_tex_op_read_lookup_miss_realtime` (x 32) | bytes GPU code read from memory (L2 misses) |
+| kwrite | `..._srcunit_tex_op_write_realtime` (x 32) | bytes GPU code wrote |
+| C2C | all L2 read misses + all L2 writes (x 32) | all GPU memory traffic. On GB10 all GPU memory lies behind the CPU die, so this traffic crosses NVLink C2C. |
 
-Good to know:
+* **Device wide.** The counters see every process on the GPU. `run -- CMD` reports the GPU's traffic while CMD runs, not CMD's alone. Use `--idle` or phases for a baseline; the JSON reports raw, baseline and subtracted values separately.
+* **One reader at a time.** The GPU has one sampling unit. While another profiler holds it, pravaha says "counters busy".
+* **GPU side.** CPU memory traffic is not included.
 
-* **Whole GPU.** The counters see every program on the GPU, including the desktop. Use `--idle` or a phase mark for a baseline.
-* **One reader at a time.** The GPU has one sampling unit. While another profiler holds it (another `pravaha c2c`, Nsight Compute, Nsight Systems GPU metrics, DCGM profiling), pravaha says so and stops.
-* **GPU side.** CPU traffic to memory is not counted here.
+## ✅ Checked against known bytes
 
-## 🔐 Permissions, without changing your system
+`pravaha verify` on an Acer GN100 and a DGX Spark (driver 580, CUDA 13.0), each check the middle of 3 runs:
+```
+  PASS  copy host to GPU             2048.0 MiB  expected  2048.0  ratio 1.0000
+  PASS  copy GPU to host             2048.0 MiB  expected  2048.0  ratio 1.0000
+  PASS  kernel write (cudaMemset)    4096.0 MiB  expected  4096.0  ratio 1.0000
+  PASS  kernel read (GPU to GPU copy) 4095.9 MiB expected  4096.0  ratio 1.0000
+```
+On real frameworks, observed from outside: PyTorch `.cuda()` 8 minus 4 copies of 1 GiB gives 3.9999 GiB; vLLM serving Qwen3 4B reads 7.52 GiB per generated token, against 7.49 GiB of weights. PASS means agreement for these workloads on that machine and software, not a claim about every workload.
 
-GPU counters normally need root. `pravaha install-sampler` builds one small program, `pravaha-c2c`, copies it to `/usr/local/bin` and gives that one file the `cap_sys_admin` capability. It only reads counters and runs no GPU work. pravaha changes no system setting, no driver option, no group and no sudoers file. `pravaha permissions` shows the state; `pravaha uninstall-sampler` removes it.
-
-## 🧰 Commands
-
-| command | does |
-|---|---|
-| `pravaha c2c [--idle S] [--csv FILE] [--json FILE] -- CMD` | measure while CMD runs |
-| `pravaha c2c --seconds N [--csv FILE]` | observe the whole GPU for N seconds (a running server, say) |
-| `pravaha install-sampler` / `uninstall-sampler` | set up or remove the reader (once per machine) |
-| `pravaha permissions` | what can be read here, changes nothing |
-| `pravaha test` | check pravaha against known bytes on this machine |
-
-Diagnostics: pravaha also reads the GPU's SMMU (address translation) counters through Linux perf. They count page translations, not bytes, and are kept for studying page size and translation caching. See [docs/MANUAL.md](docs/MANUAL.md).
+## 🎓 Learn
+[docs/TUTORIAL.md](docs/TUTORIAL.md): lessons with expected output. [docs/MANUAL.md](docs/MANUAL.md): every command, option and field. Examples: [examples/](examples).
 
 ## 📦 Requirements
-
-NVIDIA GB10 system, Linux, NVIDIA driver with CUDA 13 (CUPTI is part of it), `g++`, Python 3.8 or newer.
+NVIDIA GB10 system, Linux, NVIDIA driver 565 or newer with CUDA 13 (CUPTI included), `gcc` and `g++`, Python 3.8 or newer.
 
 ## 📖 Cite
-
-If pravaha helps your work, please cite it (see [CITATION.cff](CITATION.cff)).
+See [CITATION.cff](CITATION.cff).
 
 ## License
-
-MIT. Copyright (c) 2026 Deepak Panigrahy and Sirisha Kota.
+MIT. Copyright (c) 2026 MANTRA Labs.

@@ -1,25 +1,22 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pravaha-mem"
 version = "1.0.0"
-description = "GPU memory traffic on the NVIDIA GB10 (DGX Spark), where NVLink C2C traffic counters are not exposed"
+description = "Live GPU memory traffic over NVLink C2C on the NVIDIA GB10 (DGX Spark), from the GPU's L2 cache counters"
 readme = "README.md"
 license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.8"
 authors = [
   {name = "Deepak Panigrahy", email = "deepakp@tamu.edu"},
   {name = "Sirisha Kota"},
 ]
-maintainers = [
-  {name = "Deepak Panigrahy", email = "deepakp@tamu.edu"},
-]
-keywords = [
-  "gb10", "dgx-spark", "nvlink", "nvlink-c2c", "gpu", "gpu-memory-traffic",
-  "unified-memory", "performance-counters", "smmu", "pmcg", "perf", "nsight-compute",
-]
+maintainers = [{name = "Deepak Panigrahy", email = "deepakp@tamu.edu"}]
+keywords = ["gb10", "dgx-spark", "nvlink", "nvlink-c2c", "gpu", "memory-traffic", "l2-cache",
+            "performance-counters", "cupti", "smmu", "energy", "llm"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
@@ -51,4 +48,4 @@ where = ["python"]
 include = ["pravaha_mem*"]
 
 [tool.setuptools.package-data]
-pravaha_mem = ["pravaha_pmcg.c", "pravaha_c2c.cpp"]
+pravaha_mem = ["reader.cpp", "smmu/pravaha_pmcg.c"]

@@ -8,7 +8,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # 2 s idle baseline first, then the command; one row per 10 ms sample in the CSV
-pravaha c2c --idle 2 --csv /tmp/pravaha_lesson1.csv --json /tmp/pravaha_lesson1.json -- "$@"
+pravaha run --idle 2 --csv /tmp/pravaha_lesson1.csv --json /tmp/pravaha_lesson1.json -- "$@"
 
 echo
 echo "CSV  : /tmp/pravaha_lesson1.csv  (first rows below)"

@@ -1,5 +1,5 @@
 /* pravaha-c2c: live, device wide sampler of GPU L2 traffic over NVLink C2C.
- * Part of pravaha-mem. MIT License. Copyright (c) 2026 Deepak Panigrahy and Sirisha Kota.
+ * Part of pravaha-mem. MIT License. Copyright (c) 2026 MANTRA Labs.
  * Written from the public CUPTI headers. Runs no GPU work of its own; it only reads counters.
  *
  * Output (stdout, one line each):
