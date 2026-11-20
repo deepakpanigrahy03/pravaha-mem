@@ -1,6 +1,6 @@
 # Validation record
 
-Every test that supports pravaha 1.0's numbers: when, where, the command, what was expected, what was measured. Raw reports are in [validation/](../validation). The summary per feature and machine is the [test matrix](TEST_MATRIX.md).
+Every test that supports pravaha's numbers: when, where, the command, what was expected, what was measured. Raw reports are in [validation/](../validation). The summary per feature and machine is the [test matrix](TEST_MATRIX.md).
 
 Machines: Acer GN100 (GB10, with desktop) and NVIDIA DGX Spark (GB10, headless), driver 580.159.03, CUDA 13.0. All workloads are light (copies and simple writes and reads of a few GiB).
 
@@ -17,6 +17,8 @@ Each check is the middle of three runs, background subtracted, measured only whi
 
 Files: `validation/verify_gn100_2026-11-18.json`, `validation/verify_spark_2026-11-18.json`.
 
+The GN100 read check is the only one below 1.0000 (0.28% low): the desktop redraws the screen in bursts that read memory, and the background, measured just before the check, is subtracted at its average rate, so a burst pattern that differs during the check leaves a small error. The Spark has no desktop and agrees to the last digit shown.
+
 ## 2. Each path by hand (`pravaha run -- python -m pravaha_mem.known_bytes ...`, GN100)
 These include the program's own startup and setup, so they show what a user sees.
 
@@ -26,7 +28,7 @@ These include the program's own startup and setup, so they show what a user sees
 | `h2d 4 512` | copied 2 GiB in; cleared 2 x 512 MiB | 2.0158 | 0.03 | 1.0000 | 5.35 | same 2 GiB; setup now 1 GiB |
 | `h2d 16 128` | copied 2 GiB in; cleared 2 x 128 MiB | 2.0141 | 0.02 | 0.2500 | 4.53 | same 2 GiB; setup now 0.25 GiB |
 | `memset 16 256` | wrote 4 GiB; cleared 2 x 256 MiB | 0.0147 | 0.02 | 4.4999 | 4.80 | 4 + 0.5 written; no copy engine work; writes cross once |
-| `d2d 16 256` | copied 4 GiB GPU to GPU; cleared 2 x 256 MiB | 0.0147 | 4.0292 | 4.4999 | 8.82 | reads 4 (L2 misses), writes 4 + 0.5; on GB10 a GPU to GPU copy crosses C2C twice |
+| `d2d 16 256` | copied 4 GiB GPU to GPU; cleared 2 x 256 MiB | 0.0147 | 4.0292 | 4.4999 | 8.82 | reads 4 (L2 misses), writes 4 + 0.5 setup; 8.82 = 4.03 + 4.50 + 0.29 from the desktop and CUDA startup; on GB10 a GPU to GPU copy crosses C2C twice |
 
 Conclusions: pravaha counts bytes, not the number of copies (three splits of 2 GiB agree); every column is accounted for by the program's own steps.
 
@@ -52,11 +54,46 @@ A second reader started while one was running reported "GPU counters busy" and e
 
 On 1.0 (2026-11-18, GN100), from outside, Mistral 7B Instruct v0.3 served by vLLM (weights 14,496,078,512 bytes = 13.50 GiB): 200 tokens in 12.54 s; kernel reads 13.26 GiB per token; 15.9 tokens per second; 227 GB/s; no copies during generation; idle before and after 0.007 and 0.02 GiB. The embedding table (32,768 x 4,096 x 2 bytes = 0.25 GiB) is a lookup of one row per token, so 13.50 - 0.25 = 13.25 GiB is the expected read per token.
 
+With a 1,510 token prompt (GN100, 2026-11-19): prefill 0.40 s, 38.2 GiB read, 7.88 GiB written (125 GB/s reads plus writes, about 2.9 passes over the weights); decode 13.47 GiB per token at 226 GB/s reads plus writes, the weights plus the KV cache (0.125 MiB per earlier token), about 83% of the 273 GB/s NVIDIA specifies for the memory.
+
 `pravaha kernels` (Nsight Compute, 1.0, GN100): PyTorch `torch.ones(2**24)` then `.sum()`: 0.067 GB written, 0.067 GB read (64 MiB each). Driver operations (`cudaMemcpy`, `cudaMemset`) are not kernels to Nsight Compute ("No kernels were profiled" for known_bytes); they are visible to `run` and `observe`.
 
 `pravaha uninstall` (1.0, GN100): removed the folder; `status` then reported not ready with the fix line; `install` restored it.
 
-## 8. Known limits found during validation
+## 8. Overhead of the separate reader (both machines, 2026-11-20)
+`python validation/overhead_ab.py`: one light GPU job (`known_bytes d2d 32 256`, 8 GiB copied GPU to GPU, about 0.07 s) timed by its own window, 20 times with nothing observing (A) and 20 times with the pravaha reader running as a separate process at 10 ms (B), in 5 blocks ordered A B B A A B B A, thermal guard (start at 35 C headroom or more, stop below 15 C), 10 s cool down between blocks.
+
+| machine | without reader (median) | with reader (median) | difference | spread between runs |
+|---|---|---|---|---|
+| GN100 | 71.92 ms | 71.90 ms | -0.04% | 15.2% / 23.3% |
+| Spark | 71.15 ms | 70.77 ms | -0.53% | 2.0% / 2.9% |
+
+Conclusion: the reader has no measurable cost on the measured program; both differences are far inside the run to run spread. Files: `validation/overhead_ab_gn100.json`, `validation/overhead_ab_spark.json`.
+
+## 9. Every feature on the DGX Spark (2026-11-20)
+The same commands as the GN100 rows of the [test matrix](TEST_MATRIX.md), run on the headless DGX Spark with light work and 30 s cool downs; vLLM 0.23.0 and PyTorch 2.11.0 (CUDA 13.0) in their own environment, as on the GN100.
+
+| feature | Spark result | GN100 for comparison |
+|---|---|---|
+| copy into the GPU, 3 splits of 2 GiB | copy 2.0147 / 2.0159 / 2.0141 GiB | 2.0147 / 2.0158 / 2.0141 GiB |
+| observe 3 s | 112 samples, 0 gaps; clock offset -880 ns, spread 752 ns; samples about 27 ms on an idle GPU | 150 samples, 0 gaps; -528 ns, 648 ns |
+| idle baseline | 0.08 GiB of total traffic in 2 s idle (no desktop) | desktop bursts every 100 ms |
+| run - idle, `known_bytes h2d 8 256` | copy 2.0147, kread 0.0000, kwrite 0.5000 GiB | copy 2.0147, kread 0.005 |
+| Python phases (`examples/02`) | load 1.000, compute 9.941, save 0.422 GiB | 0.992, 9.952, 0.421 |
+| LLM from outside (`examples/03`, vLLM, Qwen3 4B Instruct 2507) | 400 tokens; 7.518 GiB read per token (weights 7.49 GiB); 23.6 tokens/s; 190.6 GB/s; no copies; idle before 0.08 GiB, after 0.52 GiB per 2 s | Qwen3 4B 7.52 GiB per token, 187.6 GB/s |
+| SMMU translations, `h2d 8 256` | 1,267,880 requests, 709,203 misses in 1.31 s; 7 GPU units of 17 | 1,295,537 and 671,242 in 1.20 s |
+| per kernel (`pravaha kernels`, PyTorch fill and sum of 64 MiB) | 0.067 GB written, 0.067 GB read | same |
+| uninstall, status, install | nothing left; not ready with the fix line; reinstall ready | same |
+| unit tests, GPU tests | 3 passed; 7 passed | 3 passed; 7 passed |
+
+Conclusion: every feature gives the same result on both machines; the copy splits agree to the fourth decimal and the LLM read per token matches the weights on both.
+
+## 10. Which counters exist, and which tools can read traffic (GN100, 2026-11-19)
+Counter names, listed by Nsight Compute (needs root: `sudo env PATH=$PATH ncu --query-metrics --query-metrics-mode all`): `lts__t_sectors_op_read`, `lts__t_sectors_op_read_lookup_miss`, `lts__t_sectors_aperture_device`, `lts__t_sectors_aperture_sysmem` all exist. pravaha uses the `lookup_miss` reads (hits never leave the GPU); the aperture counters exist but PM sampling rejects them, so live sampling cannot split traffic by buffer type.
+
+Nsight Systems GPU metrics (`sudo nsys profile --gpu-metrics-devices=all --gpu-metrics-set=gb20b -o /tmp/gm sleep 3`, then `nsys export --type sqlite` and `select metricName from TARGET_INFO_GPU_METRICS`): 19 metrics, clocks and activity percentages (copy engines, SMs, tensor cores, warps). None is memory or link traffic.
+
+## 11. Known limits found during validation
 * Live sampling on GB10 offers no aperture (memory type) split; `ConfigAddMetrics` rejects the aperture counters.
 * Values are device wide; other GPU users (the desktop, another LLM) appear in kread and C2C. `verify` subtracts a background and takes the middle of three runs.
-* Overhead (A/B with and without pravaha) not yet measured.
+* The L2 write counter counts writes arriving at L2; data written more than once before eviction may be counted more often than it reaches memory. The checks above write each byte once and do not test this case.

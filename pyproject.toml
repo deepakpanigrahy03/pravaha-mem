@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pravaha-mem"
-version = "1.0.0"
+version = "1.0.1"
 description = "Live GPU memory traffic over NVLink C2C on the NVIDIA GB10 (DGX Spark), from the GPU's L2 cache counters"
 readme = "README.md"
 license = "MIT"
