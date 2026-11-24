@@ -22,10 +22,10 @@ import time
 
 from .observer import JSON_NAMES, METRICS, observe
 from .status import provenance, thermal
+from .thermal_limits import resolve as resolve_limits
 
 MIB = 2 ** 20
-MIN_HEADROOM_START = 35.0     # C, a check starts only above this
-MIN_HEADROOM_ABORT = 15.0     # C, verification stops below this
+# Start and abort headroom: [thermal] in pravaha.ini, overridable (thermal_limits.resolve).
 # name, known_bytes direction, times, MiB, pravaha field, tolerance, what it does in words
 # GPU code checks move 4 GiB (not 2): other programs also run GPU code, and more data makes
 # their share smaller.
@@ -46,17 +46,23 @@ def _known(mode, n, mib):
     return int(w[1]), int(w[2])
 
 
-def _wait_for_headroom(cooldown_s):
-    """Cool down, then wait (up to 10 minutes) until headroom allows a check. Returns headroom."""
+def _wait_for_headroom(cooldown_s, limits=None):
+    """Cool down, then wait (up to 10 minutes) until headroom allows a check. Returns headroom.
+    limits: thermal_limits.resolve() result (resolved once per verify run when not given)."""
+    lim = limits or resolve_limits()
+    if lim["error"]:
+        raise RuntimeError("thermal limits unknown: " + lim["error"])
     time.sleep(cooldown_s)
     deadline = time.time() + 600
     while True:
         h = thermal()["headroom_c"]
-        if h is None or h >= MIN_HEADROOM_START:
+        if h is None or h >= lim["start_c"]:
             return h
-        if h < MIN_HEADROOM_ABORT or time.time() > deadline:
-            raise RuntimeError(f"GPU thermal headroom {h:.0f} C is too low: verification stopped to protect the machine")
-        print(f"  waiting for the GPU to cool (headroom {h:.0f} C, need {MIN_HEADROOM_START:.0f} C)", flush=True)
+        if h < lim["abort_c"] or time.time() > deadline:
+            raise RuntimeError(f"GPU thermal headroom {h:.0f} C is below {lim['abort_c']:.0f} C "
+                               f"({lim['source']['abort_c']}): verification stopped to protect the machine")
+        print(f"  waiting for the GPU to cool (headroom {h:.0f} C, need {lim['start_c']:.0f} C "
+              f"from {lim['source']['start_c']})", flush=True)
         time.sleep(15)
 
 
@@ -67,8 +73,8 @@ def verify(json_path: str | None = None, cooldown_s: float = 30.0, quiet: bool =
         "between checks; stops if the GPU gets warm).")
     report = {"provenance": provenance(), "meaning": __doc__.split("PASS means:")[1].strip(),
               "metrics": {JSON_NAMES[k]: {"counter": c, "conversion": v} for k, (c, v) in METRICS.items()},
-              "checks": []}
-    h = _wait_for_headroom(0)
+              "checks": [], "thermal_limits": resolve_limits()}
+    h = _wait_for_headroom(0, report["thermal_limits"])
     with observe() as m:
         time.sleep(2)
     idle = m.total()

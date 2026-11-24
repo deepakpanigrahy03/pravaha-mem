@@ -86,6 +86,9 @@ def _parser():
     s.add_argument("--json", metavar="FILE", help="save the full report (every run, background, temperatures)")
     s.add_argument("--cooldown", type=float, default=30.0, metavar="SECONDS",
                    help="wait between checks (default 30)")
+    s.add_argument("--kernels", action="store_true",
+                   help="instead: known GPU kernels reading and writing in each memory placement "
+                        "(device, pinned, pageable, managed); logical bytes exact, counter traffic reported")
 
     s = _sub(sub, "run", "measure GPU memory traffic while a command runs",
              "Starts observing, runs your command, stops when it ends, prints the table.\n"
@@ -130,6 +133,10 @@ def _parser():
              "bytes that run reports in total.",
              "example:\n  pravaha kernels --match gemm -- python my_app.py")
     s.add_argument("--match", metavar="REGEX", help="only kernels whose name matches REGEX")
+    s.add_argument("--name-base", default="demangled", choices=("demangled", "function", "mangled"),
+                   help="which kernel name REGEX sees (default demangled: includes template arguments)")
+    s.add_argument("--timeout", type=float, default=None, metavar="SECONDS")
+    s.add_argument("--probe", action="store_true", help="only check that kernel traffic can be measured here")
     s.add_argument("command", nargs=argparse.REMAINDER)
     return p
 
@@ -171,6 +178,9 @@ def main(argv=None):
             from .status import report
             return report()
         if a.verb == "verify":
+            if a.kernels:
+                from .verify_kernels import verify_kernels
+                return 0 if verify_kernels(a.json, a.cooldown)["all_pass"] else 1
             from .verify import verify
             return 0 if verify(a.json, a.cooldown)["all_pass"] else 1
         if a.verb == "run":
@@ -193,18 +203,22 @@ def main(argv=None):
                 return sm.run(None, seconds=a.seconds, unit=a.unit, live=a.live)
             return _err("usage: pravaha smmu status | run -- CMD | observe [--seconds N]")
         if a.verb == "kernels":
-            from .kernels import kernel_traffic
+            from .kernels import kernel_traffic, probe
+            if a.probe:
+                r = probe()
+                print(("ready: " if r["ok"] else "not ready: ") + (r["reason"] or str(r["version"])))
+                return 0 if r["ok"] else 1
             cmd = _cmd(a)
             if not cmd:
-                return _err("usage: pravaha kernels [--match REGEX] -- CMD [ARGS]")
-            k = kernel_traffic(cmd, match=a.match)
+                return _err("usage: pravaha kernels [--match REGEX] [--name-base B] [--timeout S] -- CMD [ARGS]")
+            k = kernel_traffic(cmd, match=a.match, name_base=a.name_base, timeout=a.timeout)
             print(k.summary())
             return 0
         _parser().print_help()
         return 0
     except KeyboardInterrupt:
         return 130
-    except (RuntimeError, FileNotFoundError, OSError) as e:
+    except (RuntimeError, FileNotFoundError, OSError, TimeoutError) as e:
         return _err(str(e))
 
 

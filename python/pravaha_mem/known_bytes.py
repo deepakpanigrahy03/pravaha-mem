@@ -16,6 +16,8 @@ DIRECTION  where the data goes, and who moves it:
           (GPU code reads and writes; columns: kread, kwrite) CUDA call: cudaMemcpy
   memset  fill a GPU buffer with a value
           (GPU code writes; column: kwrite)                 CUDA call: cudaMemset
+          (a driver operation, not a kernel: `pravaha kernels` does not see it;
+           for profiled kernels use known_kernel)
   "Host" is NVIDIA's word for the computer side, "device" for the GPU.
 TIMES     how many times to repeat
 SIZE_MIB  size of each repeat, in MiB (1 MiB = 1,048,576 bytes)

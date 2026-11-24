@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pravaha-mem"
-version = "1.0.1"
+version = "1.1.0"
 description = "Live GPU memory traffic over NVLink C2C on the NVIDIA GB10 (DGX Spark), from the GPU's L2 cache counters"
 readme = "README.md"
 license = "MIT"
@@ -48,7 +48,7 @@ where = ["python"]
 include = ["pravaha_mem*"]
 
 [tool.setuptools.package-data]
-pravaha_mem = ["reader.cpp", "smmu/pravaha_pmcg.c"]
+pravaha_mem = ["reader.cpp", "smmu/pravaha_pmcg.c", "pravaha.ini"]
 
 [tool.pytest.ini_options]
 markers = ["gpu: needs a GB10 with pravaha installed (light work only)"]

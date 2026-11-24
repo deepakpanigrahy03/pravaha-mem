@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.1.0 (2026-11-24)
+
+New
+- `known_kernel`: a GPU kernel that reads or writes an exact, known amount of data in a chosen memory placement (device `cudaMalloc`, pinned `cudaMallocHost`, managed `cudaMallocManaged` with optional prefetch, pageable `aligned_alloc`). It is compiled at run time with NVRTC, so nothing needs building. The checksum is verified outside the work window, and the first pass is timed separately. Memory attributes before and after are recorded as requests and policy, not residency. `--hold S` gives a duration matched control with no kernels, and `--query` lists the supported placements. Python: `known_kernel.run()`, `query()`, `parse()`.
+- `pravaha verify --kernels`: logical bytes checked exactly in each placement. Counter traffic is reported as observed bytes per logical byte. A miss fixture (1 GiB device read) is judged within 5%.
+- `pravaha kernels --probe` and `kernels.probe()`: can kernel traffic be measured here.
+
+Changed (kernel pass)
+- A counter Nsight Compute could not read is None, never 0. The aggregate of that direction is None and the other direction stays complete.
+- `kernel_traffic(name_base="demangled")` by default, so a regex sees template arguments (`MulFunctor`).
+- `timeout=`, and distinct errors: `NoPermission`, `NoKernelMatched`, `NoKernelData`, `WorkloadFailed` (with the kernels profiled before the failure).
+- The result records `ncu_args`, `ncu_version` and `metrics`.
+
+- Thermal gate of `verify`: start_c 10 and abort_c 5 (headroom below the GPU's own limit) now live in `pravaha.ini` shipped with the library, replaceable by a file named in `PRAVAHA_CONFIG`, `PRAVAHA_MIN_HEADROOM_START_C` / `_ABORT_C`, or arguments; the values and their sources are in the report. The fixed 35 C and 15 C of 1.0.x blocked every check on a GB10 idling at 61 C.
+
+Fixed
+- `__version__` reported 1.0.0 in release 1.0.1.
+
+Docs
+- `cudaMemset` and `cudaMemcpy` are driver operations, not profiled kernels.
+
 ## 1.0.1 (2026-11-20)
 
 Documentation and validation release; no change to the measurement code or its numbers.
