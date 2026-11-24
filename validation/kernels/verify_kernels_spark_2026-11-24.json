@@ -1,0 +1,542 @@
+{
+ "provenance": {
+  "gpu": "NVIDIA GB10",
+  "gpu_uuid": "GPU-0f2ef1f5-ed0f-32d4-66c2-5f4b922227de",
+  "driver": "580.159.03",
+  "cuda": "13.0",
+  "host": "spark-086e",
+  "kernel": "6.17.0-1026-nvidia",
+  "pravaha": "1.1.0"
+ },
+ "attributes": {
+  "managed_memory": 1,
+  "pageable_memory_access": 1,
+  "concurrent_managed_access": 1,
+  "pageable_memory_access_uses_host_page_tables": 1,
+  "direct_managed_mem_access_from_host": 0
+ },
+ "supported": {
+  "device": {
+   "ok": true,
+   "reason": null
+  },
+  "pinned": {
+   "ok": true,
+   "reason": null
+  },
+  "managed": {
+   "ok": true,
+   "reason": null
+  },
+  "pageable": {
+   "ok": true,
+   "reason": null
+  }
+ },
+ "settings": {
+  "kernel_seconds": 2.0,
+  "window_pad_ms": 40.0,
+  "small_mib": 16,
+  "miss_mib": 1024,
+  "miss_tolerance": 0.05
+ },
+ "checks": [
+  {
+   "check": {
+    "ok": true,
+    "checksum": 7262063228031598592,
+    "expected": 7262063228031598592,
+    "logical_bytes": 1724647473152,
+    "aux_write_bytes": 157896192,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 102797,
+   "raw_bytes": 0.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 0.0,
+   "observed_per_logical": 0.0,
+   "first_pass_s": 0.040032049,
+   "window_s": 1.265078628,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "device",
+   "prefetch": "not_applicable",
+   "op": "read",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 42.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 141289400041472,
+    "expected": 141289400041472,
+    "logical_bytes": 494391001088,
+    "aux_write_bytes": 0,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 29468,
+   "raw_bytes": 494405107712.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 494405107712.0,
+   "observed_per_logical": 1.0000285333348886,
+   "first_pass_s": 0.040075984,
+   "window_s": 1.701492419,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "device",
+   "prefetch": "not_applicable",
+   "op": "write",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 42.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 2075399997209182208,
+    "expected": 2075399997209182208,
+    "logical_bytes": 492881051648,
+    "aux_write_bytes": 45124608,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 29378,
+   "raw_bytes": 492877385728.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 492877385728.0,
+   "observed_per_logical": 0.9999925622622583,
+   "first_pass_s": 0.040070432,
+   "window_s": 1.857253065,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "pinned",
+   "prefetch": "not_applicable",
+   "op": "read",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 41.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 141289400041472,
+    "expected": 141289400041472,
+    "logical_bytes": 380003942400,
+    "aux_write_bytes": 0,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 22650,
+   "raw_bytes": 380017743872.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 380017743872.0,
+   "observed_per_logical": 1.0000363192863548,
+   "first_pass_s": 0.040088576,
+   "window_s": 1.887264365,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "pinned",
+   "prefetch": "not_applicable",
+   "op": "write",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 41.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 1427517453319012352,
+    "expected": 1427517453319012352,
+    "logical_bytes": 339017203712,
+    "aux_write_bytes": 31037952,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 20207,
+   "raw_bytes": 248998813440.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 248998813440.0,
+   "observed_per_logical": 0.7344725008454972,
+   "first_pass_s": 0.040110176,
+   "window_s": 2.638547172,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "pageable",
+   "prefetch": "not_applicable",
+   "op": "read",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 40.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 141289400041472,
+    "expected": 141289400041472,
+    "logical_bytes": 222566547456,
+    "aux_write_bytes": 0,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 13266,
+   "raw_bytes": 222602883701.27625,
+   "background_bytes": 0.0,
+   "observed_bytes": 222602883701.27625,
+   "observed_per_logical": 1.0001632601381096,
+   "first_pass_s": 0.040160033,
+   "window_s": 2.057646058,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "pageable",
+   "prefetch": "not_applicable",
+   "op": "write",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 40.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 1226533281760018432,
+    "expected": 1226533281760018432,
+    "logical_bytes": 291286024192,
+    "aux_write_bytes": 26668032,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 17362,
+   "raw_bytes": 199446333696.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 199446333696.0,
+   "observed_per_logical": 0.6847095882792363,
+   "first_pass_s": 0.040090016,
+   "window_s": 1.779962039,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": -2,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 0,
+    "last_prefetch_location_id": -2
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": -2,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 0,
+    "last_prefetch_location_id": -2
+   },
+   "placement": "managed",
+   "prefetch": "none",
+   "op": "read",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 40.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 141289400041472,
+    "expected": 141289400041472,
+    "logical_bytes": 212852539392,
+    "aux_write_bytes": 0,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 12687,
+   "raw_bytes": 212889832448.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 212889832448.0,
+   "observed_per_logical": 1.0001752060656948,
+   "first_pass_s": 0.040160672,
+   "window_s": 1.971567955,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": -2,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 0,
+    "last_prefetch_location_id": -2
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": -2,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 0,
+    "last_prefetch_location_id": -2
+   },
+   "placement": "managed",
+   "prefetch": "none",
+   "op": "write",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 40.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 1214876906256596992,
+    "expected": 1214876906256596992,
+    "logical_bytes": 288517783552,
+    "aux_write_bytes": 26414592,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 17197,
+   "raw_bytes": 207231188480.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 207231188480.0,
+   "observed_per_logical": 0.7182614046480446,
+   "first_pass_s": 0.04010424,
+   "window_s": 2.622247859,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": 0,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 1,
+    "last_prefetch_location_id": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": 0,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 1,
+    "last_prefetch_location_id": 0
+   },
+   "placement": "managed",
+   "prefetch": "device",
+   "op": "read",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 39.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 141289400041472,
+    "expected": 141289400041472,
+    "logical_bytes": 213691400192,
+    "aux_write_bytes": 0,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 12737,
+   "raw_bytes": 213713878528.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 213713878528.0,
+   "observed_per_logical": 1.0001051906439837,
+   "first_pass_s": 0.04016288,
+   "window_s": 1.982767163,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": 0,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 1,
+    "last_prefetch_location_id": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0,
+    "read_mostly": 0,
+    "preferred_location": -2,
+    "last_prefetch_location": 0,
+    "preferred_location_type": 0,
+    "preferred_location_id": -2,
+    "last_prefetch_location_type": 1,
+    "last_prefetch_location_id": 0
+   },
+   "placement": "managed",
+   "prefetch": "device",
+   "op": "write",
+   "kind": "logical",
+   "pass_": true,
+   "headroom_before_c": 39.0
+  },
+  {
+   "check": {
+    "ok": true,
+    "checksum": 2093343751014449152,
+    "expected": 2093343751014449152,
+    "logical_bytes": 497142464512,
+    "aux_write_bytes": 711168,
+    "blocks": 192,
+    "threads": 256,
+    "arch": "compute_121",
+    "runtime_version": 13000
+   },
+   "times": 463,
+   "raw_bytes": 497139120640.0,
+   "background_bytes": 0.0,
+   "observed_bytes": 497139120640.0,
+   "observed_per_logical": 0.9999932738153775,
+   "first_pass_s": 0.04429439,
+   "window_s": 2.046713798,
+   "attrs_before": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "attrs_after": {
+    "managed_memory": 1,
+    "pageable_memory_access": 1,
+    "concurrent_managed_access": 1,
+    "pageable_memory_access_uses_host_page_tables": 1,
+    "direct_managed_mem_access_from_host": 0
+   },
+   "placement": "device",
+   "prefetch": "not_applicable",
+   "op": "read",
+   "kind": "miss_fixture",
+   "tolerance": 0.05,
+   "pass_": true
+  }
+ ],
+ "all_pass": true
+}
