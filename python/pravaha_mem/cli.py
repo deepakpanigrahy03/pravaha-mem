@@ -16,6 +16,7 @@ EPILOG = """start here:
 more:
   pravaha smmu status|run|observe   GPU address translations (counts, not bytes)
   pravaha kernels -- CMD            L2 traffic per kernel (Nsight Compute replay)
+  pravaha schedule FILE.json        GPU workload slots for energy experiments
   pravaha uninstall                 remove what install created
 docs: docs/TUTORIAL.md, docs/MANUAL.md"""
 
@@ -130,6 +131,15 @@ def _parser():
     o.add_argument("--live", action="store_true", help="also print counts every 100 ms")
     o.add_argument("--seconds", type=float, default=0.0, help="how long (default: until Ctrl+C)")
 
+    s = sub.add_parser("schedule", help="run a schedule of GPU workload slots (energy experiments)",
+                       formatter_class=argparse.RawDescriptionHelpFormatter,
+                       description="Run the slots of FILE (idle, noop sham, kernel, copy, compute, overlap, "
+                                   "square wave) in one process; print one line per slot.",
+                       epilog="example:\n  pravaha schedule my_schedule.json --json result.json")
+    s.add_argument("file", help="schedule JSON")
+    s.add_argument("--json", metavar="FILE", help="save slots, halves and totals as JSON")
+    s.add_argument("--raw", action="store_true", help="print the machine lines instead of the table")
+    s.add_argument("--device", type=int, default=0)
     s = _sub(sub, "kernels", "L2 traffic per named GPU kernel (Nsight Compute)",
              "Runs your command under NVIDIA Nsight Compute, which replays each GPU kernel to measure\n"
              "it. Slower than run, and needs profiling rights. Use it to see which kernel moves the\n"
@@ -208,6 +218,9 @@ def main(argv=None):
             if a.smmu_verb == "observe":
                 return sm.run(None, seconds=a.seconds, unit=a.unit, live=a.live)
             return _err("usage: pravaha smmu status | run -- CMD | observe [--seconds N]")
+        if a.verb == "schedule":
+            from .schedule import cli as schedule_cli
+            return schedule_cli(a.file, a.device, a.raw, a.json)
         if a.verb == "kernels":
             from .kernels import kernel_traffic, probe
             if a.probe:

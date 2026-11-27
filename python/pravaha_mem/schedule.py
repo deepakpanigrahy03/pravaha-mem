@@ -178,6 +178,7 @@ class CudaBackend:
         ptx = ctypes.create_string_buffer(n.value)
         cu.nvrtc.nvrtcGetPTX(prog, ptx)
         cu.nvrtc.nvrtcDestroyProgram(ctypes.byref(prog))
+        cu.arch = arch.split("=")[1]              # read by attributes(); known_kernel sets it in its own compile
         cu.dck(cu.drv.cuInit(0))
         mod = ctypes.c_void_p()
         cu.dck(cu.drv.cuModuleLoadData(ctypes.byref(mod), ptx))
@@ -444,3 +445,49 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def table(parsed):
+    """Readable summary of a parsed run: one line per slot, then the totals."""
+    lines = ["%-28s %-8s %9s %8s %11s %9s  %s" % ("slot", "kind", "seconds", "ops", "payload GiB", "GB/s", "check")]
+    for s in parsed["slots"]:
+        sec = s["seconds"]
+        rate = s["payload_bytes"] / sec / 1e9 if sec and s["payload_bytes"] else 0.0
+        chk = "" if s.get("check") is None else ("ok" if s["check"]["ok"] else "FAILED")
+        lines.append("%-28s %-8s %9.2f %8d %11.3f %9.2f  %s" % (s["name"][:28], s["kind"], sec, s["ops"],
+                                                                s["payload_bytes"] / 2 ** 30, rate, chk))
+    halves = parsed["halves"]
+    if halves:
+        on = [h for h in halves if h["half"] == "on"]
+        lines.append("square wave: %d halves (%d on), on payload %.3f GiB"
+                     % (len(halves), len(on), sum(h["payload_bytes"] for h in on) / 2 ** 30))
+    d = parsed["done"] or {}
+    lines.append("total payload %.3f GiB, checks %s" % ((d.get("payload_bytes") or 0) / 2 ** 30,
+                                                        "ok" if d.get("checks_ok") else "FAILED"))
+    lines.append("payload = bytes the program asked to move; bytes that reached memory: pravaha observe")
+    return "\n".join(lines)
+
+
+def cli(path, device=0, raw=False, json_path=None):
+    """`pravaha schedule FILE.json`: run it, print a table (or the machine lines with raw)."""
+    with open(path) as fh:
+        sched = json.load(fh)
+    try:
+        validate(sched)
+    except ScheduleError as e:
+        print("pravaha schedule: %s" % e, file=sys.stderr)
+        return 2
+    lines = []
+    emit = (lambda s: (lines.append(s), print(s, flush=True))) if raw else lines.append
+    try:
+        run_schedule(sched, CudaBackend(device), emit=emit)
+    except Exception as e:
+        print("pravaha schedule: %s" % e, file=sys.stderr)
+        return 1
+    parsed = parse(lines)
+    if json_path:
+        with open(json_path, "w") as fh:
+            json.dump(parsed, fh, indent=1)
+    if not raw:
+        print(table(parsed))
+    return 0 if (parsed["done"] or {}).get("checks_ok") else 3

@@ -155,3 +155,12 @@ def test_parse_roundtrip():
     p = sch.parse(lines)
     assert p["setup"]["t1"] == 2 and p["slots"] == [{"index": 0}] and p["halves"] == [{"slot": 0}]
     assert json.dumps(p["done"]) == '{"slots": 1}'
+
+
+def test_table_is_readable():
+    _, out, _ = run([{"name": "resident", "kind": "kernel", "op": "read", "footprint_mib": 8, "logical_mib": 64},
+                     {"kind": "square", "period_s": 2.0, "periods": 1,
+                      "on": {"kind": "copy", "direction": "h2d", "host": "pinned", "size_mib": 16, "pace_ms": 100},
+                      "off": {"kind": "idle"}}])
+    t = sch.table(out)
+    assert "resident" in t and "ok" in t and "square wave: 2 halves (1 on)" in t and "checks ok" in t
