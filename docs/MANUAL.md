@@ -24,6 +24,8 @@ All values are **device wide**: every process on the GPU during the window. Live
 | `pravaha smmu run [--unit U] [--live] -- CMD` | address translation counts while CMD runs |
 | `pravaha smmu observe [--unit U] [--live] [--seconds N]` | address translation counts over a window |
 | `pravaha kernels [--match REGEX] -- CMD` | L2 traffic per kernel through Nsight Compute (replay: slower; needs profiling rights) |
+| `pravaha schedule FILE.json [--json OUT] [--raw]` | run a schedule of GPU workload slots; one table line per slot (`--template` prints a starter file) |
+| `pravaha verify --schedule [--json FILE]` | the schedule runner checked under the observer; PASS or FAIL per check |
 
 Options of `run` and `observe`: `--idle S` (idle baseline first, its own row), `--interval MS` (1 to 1000, default 10), `--device N`, `--csv FILE`, `--json FILE`.
 
@@ -105,7 +107,7 @@ pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple w
 
 ## Schedules for energy experiments
 
-`python -m pravaha_mem.schedule FILE.json [--device 0]` runs the slots of FILE in order, in one process with one CUDA context and every buffer prepared before the first slot, so slots differ only in the work they do.
+`pravaha schedule FILE.json [--json OUT] [--raw] [--device N]` runs the slots of FILE in order (`pravaha schedule --template` prints a commented starter file; `--json` saves slots, halves and totals; `--raw` prints the machine lines instead of the table), in one process with one CUDA context and every buffer prepared before the first slot, so slots differ only in the work they do.
 
 ### Slot kinds
 | Kind | Keys | Work |

@@ -35,6 +35,8 @@ On the GB10 the GPU has no memory of its own: every byte it reads or writes goes
 | 9 | GPU address translations (counts, not bytes) | `pravaha smmu status / run / observe` |
 | 10 | traffic per kernel (Nsight Compute) | `pravaha kernels -- CMD` |
 | 11 | remove it | `pravaha uninstall` |
+| 12 | GPU workload slots for energy experiments (timed, known bytes) | `pravaha schedule FILE.json` |
+| 13 | check the schedule runner on this machine | `pravaha verify --schedule` |
 
 ## 🚀 Start
 
@@ -117,9 +119,12 @@ Why a password at all: NVIDIA's driver lets only privileged programs read GPU co
 `schedule` runs a list of timed GPU workload slots in one process, for experiments that compare the energy of different kinds of memory traffic:
 
 ```bash
-python -m pravaha_mem.schedule my_schedule.json
-pravaha verify --schedule          # the runner checked against the observer on this machine
+pravaha schedule --template > my_schedule.json   # a commented starter file to edit
+pravaha schedule my_schedule.json                 # run it: one line per slot
+pravaha schedule my_schedule.json --json out.json # and save the result
+pravaha verify --schedule                         # the runner checked against the observer on this machine
 ```
+Ready made examples: [examples/schedules/](examples/schedules) (probe rates, resident vs streaming, square wave). Step by step: [docs/LEARN.md](docs/LEARN.md), lesson 9.
 
 ```json
 {"slots": [

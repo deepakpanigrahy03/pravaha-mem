@@ -1,6 +1,7 @@
 """schedule: run a timestamped schedule of GPU workload slots, for energy experiments.
 
-    python -m pravaha_mem.schedule SCHEDULE.json [--device 0]
+    pravaha schedule SCHEDULE.json [--json OUT] [--raw] [--device N]
+    pravaha schedule --template            (a commented starter file)
 
 One process holds one CUDA context and every buffer for the whole schedule, so slots
 differ only in the work they do. Setup (allocation, initialisation, kernel compile)
