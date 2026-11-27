@@ -1,0 +1,124 @@
+{
+ "setup": {
+  "t0": 1795778193334073496,
+  "t1": 1795778193633188427,
+  "attributes": {
+   "blocks": 192,
+   "threads": 256,
+   "arch": "compute_121",
+   "runtime_version": 13000
+  }
+ },
+ "slots": [
+  {
+   "index": 0,
+   "name": "idle_before",
+   "kind": "idle",
+   "t0": 1795778195633298441,
+   "t1": 1795778205633824447,
+   "seconds": 10.000526006,
+   "ops": 0,
+   "payload_bytes": 0,
+   "check": null,
+   "detail": {}
+  },
+  {
+   "index": 1,
+   "name": "read_resident_8mib",
+   "kind": "kernel",
+   "t0": 1795778205633914511,
+   "t1": 1795778205648749154,
+   "seconds": 0.014834643,
+   "ops": 2048,
+   "payload_bytes": 17179869184,
+   "check": {
+    "ok": true,
+    "checksum": 72340172821233664,
+    "expected": 72340172821233664
+   },
+   "detail": {}
+  },
+  {
+   "index": 2,
+   "name": "read_streaming_1024mib",
+   "kind": "kernel",
+   "t0": 1795778205648881154,
+   "t1": 1795778205720183417,
+   "seconds": 0.071302263,
+   "ops": 16,
+   "payload_bytes": 17179869184,
+   "check": {
+    "ok": true,
+    "checksum": 72340172821233664,
+    "expected": 72340172821233664
+   },
+   "detail": {}
+  },
+  {
+   "index": 3,
+   "name": "sham_noop_10ms",
+   "kind": "noop",
+   "t0": 1795778205720221017,
+   "t1": 1795778215720487693,
+   "seconds": 10.000266676,
+   "ops": 1000,
+   "payload_bytes": 0,
+   "check": null,
+   "detail": {}
+  },
+  {
+   "index": 4,
+   "name": "copy_h2d_pinned_256mib",
+   "kind": "copy",
+   "t0": 1795778215720564829,
+   "t1": 1795778215866154149,
+   "seconds": 0.14558932,
+   "ops": 32,
+   "payload_bytes": 8589934592,
+   "check": null,
+   "detail": {}
+  },
+  {
+   "index": 5,
+   "name": "copy_d2h_pinned_256mib",
+   "kind": "copy",
+   "t0": 1795778215866190437,
+   "t1": 1795778216011735373,
+   "seconds": 0.145544936,
+   "ops": 32,
+   "payload_bytes": 8589934592,
+   "check": null,
+   "detail": {}
+  },
+  {
+   "index": 6,
+   "name": "copy_h2d_pageable_256mib",
+   "kind": "copy",
+   "t0": 1795778216011752925,
+   "t1": 1795778216156714900,
+   "seconds": 0.144961975,
+   "ops": 32,
+   "payload_bytes": 8589934592,
+   "check": null,
+   "detail": {}
+  },
+  {
+   "index": 7,
+   "name": "idle_after",
+   "kind": "idle",
+   "t0": 1795778216156721252,
+   "t1": 1795778226156795592,
+   "seconds": 10.00007434,
+   "ops": 0,
+   "payload_bytes": 0,
+   "check": null,
+   "detail": {}
+  }
+ ],
+ "halves": [],
+ "done": {
+  "slots": 8,
+  "checks_ok": true,
+  "payload_bytes": 60129542144
+ }
+}

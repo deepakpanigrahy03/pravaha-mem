@@ -70,3 +70,31 @@ Try: [examples/03_llm_bytes_per_token.py](../examples/03_llm_bytes_per_token.py)
 * Using pravaha in your own Python: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
 * The evidence behind every number: [VALIDATION.md](VALIDATION.md) and [TEST_MATRIX.md](TEST_MATRIX.md)
 * Research uses and limits: [RESEARCHER_GUIDE.md](RESEARCHER_GUIDE.md)
+
+## Lesson 9: your first schedule
+
+A schedule is a written experiment: a list of GPU steps (slots) that `pravaha schedule` runs in order, printing when each one ran and how many bytes it moved. Run `pravaha observe` (or A-LEMS) at the same time, and every slot gets its observed traffic, and its energy, over the same clock.
+
+**1. Get a starter file.**
+```bash
+pravaha schedule --template > my_test.json
+```
+It has an idle start, a streaming read, a gap, a copy and an idle end. Ready made examples: `examples/schedules/` (probe_rates, resident_vs_streaming, square_wave).
+
+**2. Measure your machine's speeds.**
+```bash
+pravaha schedule examples/schedules/probe_rates.json
+```
+The table shows seconds and GB/s per slot. A GN100 gives about 1,161 GB/s for a read that fits the 24 MiB L2, 240 GB/s for a read from memory, and 59 GB/s for copies.
+
+**3. Size your slots.** A slot must last long enough to be measured: at least 2 s for traffic (sampled every 10 ms), at least 60 s for energy (counters update about every 100 ms). For a read: `logical_mib = seconds x rate / 1,048,576`, rounded to a multiple of `footprint_mib`. Example: 60 s of streaming at 240 GB/s is about 13,730,000 MiB.
+
+**4. Run it and read the table.**
+```bash
+pravaha schedule my_test.json --json my_result.json
+```
+One line per slot: kind, seconds, operations, payload GiB, GB/s, check. Payload is what the program asked to move; the observer shows what reached memory.
+
+**5. Check your design.** Idle between measured slots (so windows never overlap), the same `logical_mib` when you compare two kinds of read, a `noop` sham when the work is paced, nothing else on the GPU.
+
+**Exercise.** Write a schedule that compares an 8 MiB read with a 1,024 MiB read of the same total size, run it under `pravaha observe`, and explain why the observed bytes differ by about a thousand times while the payload is the same.

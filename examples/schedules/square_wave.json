@@ -1,0 +1,15 @@
+{
+  "comment": "Lock in modulation for small effects: copies switched on and off every second for 300 periods (10 min), next to the same pattern with empty calls in both halves (a sham: any difference it shows is not data movement). Demodulate the energy counters at the 2 s period in analysis.",
+  "pause_after_setup_s": 2,
+  "slots": [
+    {"name": "idle_before", "kind": "idle", "seconds": 30},
+    {"name": "square_copy", "kind": "square", "period_s": 2, "periods": 300,
+     "on": {"kind": "copy", "direction": "h2d", "host": "pinned", "size_mib": 16, "pace_ms": 20},
+     "off": {"kind": "noop", "pace_ms": 20}},
+    {"name": "gap", "kind": "idle", "seconds": 30},
+    {"name": "square_sham", "kind": "square", "period_s": 2, "periods": 300,
+     "on": {"kind": "noop", "pace_ms": 20},
+     "off": {"kind": "noop", "pace_ms": 20}},
+    {"name": "idle_after", "kind": "idle", "seconds": 30}
+  ]
+}

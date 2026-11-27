@@ -97,3 +97,37 @@ Nsight Systems GPU metrics (`sudo nsys profile --gpu-metrics-devices=all --gpu-m
 * Live sampling on GB10 offers no aperture (memory type) split; `ConfigAddMetrics` rejects the aperture counters.
 * Values are device wide; other GPU users (the desktop, another LLM) appear in kread and C2C. `verify` subtracts a background and takes the middle of three runs.
 * The L2 write counter counts writes arriving at L2; data written more than once before eviction may be counted more often than it reaches memory. The checks above write each byte once and do not test this case.
+
+## Schedule runner (1.2.0)
+
+Date 2026-11-27, both machines, vLLM and other GPU programs stopped. Raw reports: [validation/schedule/](../validation/schedule).
+
+### `pravaha verify --schedule` (each task sized by a probe to about 2 s, 1 s idle between tasks)
+| check | limit | GN100 | SPARK |
+|---|---|---|---|
+| checksums (2 reads) and payloads (2 reads) | exact | ✅ | ✅ |
+| streaming read (1 GiB, far above the 24 MiB L2): observed read misses per payload byte | 1 ± 0.05 | 1.000 | 1.000 |
+| resident read (8 MiB, inside L2): observed read misses per payload byte | at most 0.05 | 1.8e-5 | 3.7e-6 |
+| sham (paced empty kernels): memory bytes per second above idle | at most 1e8 | 8.7e7 | 1.0e5 |
+| copy, pinned host to device: observed copy bytes per payload byte | 1 ± 0.05 | 1.000 | 1.000 |
+| square wave half duration error | at most 0.05 | 0.0007 | 0.0008 |
+| square wave off halves move no payload | exact | ✅ | ✅ |
+
+The sham is close to zero on the headless DGX Spark; on the GN100 the desktop redraws the screen (the 100 ms bursts of row 10 of the test matrix), which stays below the limit.
+
+### Rates (`pravaha schedule examples/schedules/probe_rates.json`)
+| slot | GN100 GB/s | SPARK GB/s |
+|---|---|---|
+| read, 8 MiB resident in L2 | 1,161 | 1,165 |
+| read, 1 GiB streaming from memory | 240 | 242 |
+| copy host to device, pinned, 256 MiB | 59.2 | 58.9 |
+| copy device to host, pinned, 256 MiB | 58.9 | 59.0 |
+| copy host to device, pageable, 256 MiB | 59.3 | 59.3 |
+
+Pageable copies reach the pinned rate on both machines. The probe slots are short (0.01 to 0.15 s) by design; they measure rates only.
+
+### First run note
+The first GN100 run of 1.2.0 code used fixed pass counts: tasks lasted 0.01 to 0.15 s, so windows widened by `window_pad_ms` caught neighbouring tasks (resident 0.995, sham 2.3 GB/s, copy 1.125 = 1 + one square wave copy). The released check sizes every task from a probe and separates tasks with idle.
+
+### Tests
+`python -m pytest tests`: 30 passed on both machines. `python -m pytest -m gpu tests`: 8 passed on both machines (includes a schedule of every slot kind on the GPU).

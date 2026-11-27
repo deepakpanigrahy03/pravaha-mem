@@ -16,6 +16,7 @@ EPILOG = """start here:
 more:
   pravaha smmu status|run|observe   GPU address translations (counts, not bytes)
   pravaha kernels -- CMD            L2 traffic per kernel (Nsight Compute replay)
+  pravaha schedule FILE.json        GPU workload slots for energy experiments
   pravaha uninstall                 remove what install created
 docs: docs/TUTORIAL.md, docs/MANUAL.md"""
 
@@ -86,6 +87,9 @@ def _parser():
     s.add_argument("--json", metavar="FILE", help="save the full report (every run, background, temperatures)")
     s.add_argument("--cooldown", type=float, default=30.0, metavar="SECONDS",
                    help="wait between checks (default 30)")
+    s.add_argument("--schedule", action="store_true",
+                   help="instead: the schedule runner checked under the observer (streaming and "
+                        "resident reads, sham, copy, square wave); settings in [schedule] of pravaha.ini")
     s.add_argument("--kernels", action="store_true",
                    help="instead: known GPU kernels reading and writing in each memory placement "
                         "(device, pinned, pageable, managed); logical bytes exact, counter traffic reported")
@@ -127,6 +131,20 @@ def _parser():
     o.add_argument("--live", action="store_true", help="also print counts every 100 ms")
     o.add_argument("--seconds", type=float, default=0.0, help="how long (default: until Ctrl+C)")
 
+    s = sub.add_parser("schedule", help="run a schedule of GPU workload slots (energy experiments)",
+                       formatter_class=argparse.RawDescriptionHelpFormatter,
+                       description="Run the slots of FILE (idle, noop sham, kernel, copy, compute, overlap, "
+                                   "square wave) in one process; print one line per slot.",
+                       epilog="example:\n  pravaha schedule my_schedule.json --json result.json\n\n"
+                              "Design: measure rates with a short probe first; make each measured slot\n"
+                              "at least 2 s (traffic) or 60 s (energy); 1 s idle between slots; begin and\n"
+                              "end with idle; same logical_mib for resident vs streaming; a noop sham\n"
+                              "for paced work. Full guide: docs/MANUAL.md, Designing a schedule.")
+    s.add_argument("file", nargs="?", help="schedule JSON")
+    s.add_argument("--template", action="store_true", help="print a commented starter schedule and exit")
+    s.add_argument("--json", metavar="FILE", help="save slots, halves and totals as JSON")
+    s.add_argument("--raw", action="store_true", help="print the machine lines instead of the table")
+    s.add_argument("--device", type=int, default=0)
     s = _sub(sub, "kernels", "L2 traffic per named GPU kernel (Nsight Compute)",
              "Runs your command under NVIDIA Nsight Compute, which replays each GPU kernel to measure\n"
              "it. Slower than run, and needs profiling rights. Use it to see which kernel moves the\n"
@@ -178,6 +196,9 @@ def main(argv=None):
             from .status import report
             return report()
         if a.verb == "verify":
+            if a.schedule:
+                from .verify_schedule import verify_schedule
+                return 0 if verify_schedule(a.json, a.cooldown)["pass"] else 1
             if a.kernels:
                 from .verify_kernels import verify_kernels
                 return 0 if verify_kernels(a.json, a.cooldown)["all_pass"] else 1
@@ -202,6 +223,15 @@ def main(argv=None):
             if a.smmu_verb == "observe":
                 return sm.run(None, seconds=a.seconds, unit=a.unit, live=a.live)
             return _err("usage: pravaha smmu status | run -- CMD | observe [--seconds N]")
+        if a.verb == "schedule":
+            from .schedule import cli as schedule_cli
+            if a.template:
+                from .schedule import TEMPLATE
+                print(TEMPLATE, end="")
+                return 0
+            if not a.file:
+                return _err("usage: pravaha schedule FILE.json [--json OUT] [--raw]   (or --template)")
+            return schedule_cli(a.file, a.device, a.raw, a.json)
         if a.verb == "kernels":
             from .kernels import kernel_traffic, probe
             if a.probe:

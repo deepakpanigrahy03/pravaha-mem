@@ -1,0 +1,103 @@
+{
+ "checks": [
+  {
+   "check": "checksum read_streaming",
+   "pass": true,
+   "exact": true
+  },
+  {
+   "check": "checksum read_resident",
+   "pass": true,
+   "exact": true
+  },
+  {
+   "check": "payload read_streaming",
+   "exact": true,
+   "pass": true
+  },
+  {
+   "check": "payload read_resident",
+   "exact": true,
+   "pass": true
+  },
+  {
+   "check": "streaming read misses per payload byte",
+   "value": 0.9999930990773136,
+   "tolerance": 0.05,
+   "pass": true
+  },
+  {
+   "check": "resident read misses per payload byte",
+   "value": 3.6731510734001275e-06,
+   "limit": 0.05,
+   "pass": true
+  },
+  {
+   "check": "sham memory bytes per second",
+   "value": 103479.50508120806,
+   "limit": 100000000.0,
+   "pass": true
+  },
+  {
+   "check": "copy bytes per payload byte",
+   "value": 1.0000001192092896,
+   "tolerance": 0.05,
+   "pass": true
+  },
+  {
+   "check": "square wave half duration error",
+   "value": 0.0008214959999999216,
+   "limit": 0.05,
+   "pass": true
+  },
+  {
+   "check": "square wave off halves move no payload",
+   "exact": true,
+   "pass": true
+  }
+ ],
+ "pass": true,
+ "settings": {
+  "idle_s": 3.0,
+  "slot_seconds": 2.0,
+  "gap_s": 1.0,
+  "streaming_mib": 1024,
+  "resident_mib": 8,
+  "resident_max_ratio": 0.05,
+  "sham_pace_ms": 10.0,
+  "sham_max_bytes_per_s": 100000000.0,
+  "copy_mib": 256,
+  "copy_tolerance": 0.05,
+  "square_period_s": 2.0,
+  "square_periods": 4,
+  "square_pace_ms": 50.0,
+  "half_tolerance": 0.05,
+  "miss_tolerance": 0.05,
+  "window_pad_ms": 40.0
+ },
+ "sized_counts": {
+  "streaming_passes": 451,
+  "resident_passes": 271631,
+  "copy_count": 422
+ },
+ "provenance": {
+  "gpu": "NVIDIA GB10",
+  "gpu_uuid": "GPU-0f2ef1f5-ed0f-32d4-66c2-5f4b922227de",
+  "driver": "580.159.03",
+  "cuda": "13.0",
+  "host": "spark-086e",
+  "kernel": "6.17.0-1026-nvidia",
+  "pravaha": "1.1.0"
+ },
+ "quality": {
+  "samples_received": 1449,
+  "gaps": 0,
+  "time_not_sampled_ms": 0.0,
+  "interval_requested_ms": 10,
+  "interval_observed_ms": 19.162376,
+  "clock_pairs": 27,
+  "clock_offset_ns": -800,
+  "clock_offset_spread_ns": 768,
+  "reader_exit": "E ok 1457"
+ }
+}
