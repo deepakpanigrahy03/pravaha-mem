@@ -86,6 +86,9 @@ def _parser():
     s.add_argument("--json", metavar="FILE", help="save the full report (every run, background, temperatures)")
     s.add_argument("--cooldown", type=float, default=30.0, metavar="SECONDS",
                    help="wait between checks (default 30)")
+    s.add_argument("--schedule", action="store_true",
+                   help="instead: the schedule runner checked under the observer (streaming and "
+                        "resident reads, sham, copy, square wave); settings in [schedule] of pravaha.ini")
     s.add_argument("--kernels", action="store_true",
                    help="instead: known GPU kernels reading and writing in each memory placement "
                         "(device, pinned, pageable, managed); logical bytes exact, counter traffic reported")
@@ -178,6 +181,9 @@ def main(argv=None):
             from .status import report
             return report()
         if a.verb == "verify":
+            if a.schedule:
+                from .verify_schedule import verify_schedule
+                return 0 if verify_schedule(a.json, a.cooldown)["pass"] else 1
             if a.kernels:
                 from .verify_kernels import verify_kernels
                 return 0 if verify_kernels(a.json, a.cooldown)["all_pass"] else 1
