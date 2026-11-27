@@ -112,6 +112,26 @@ Root owned, not writable by users, not in your PATH. No system setting, driver o
 
 Why a password at all: NVIDIA's driver lets only privileged programs read GPU counters, and only root can attach a capability to a file.
 
+## 🗓️ Schedules for energy experiments
+
+`schedule` runs a list of timed GPU workload slots in one process, for experiments that compare the energy of different kinds of memory traffic:
+
+```bash
+python -m pravaha_mem.schedule my_schedule.json
+pravaha verify --schedule          # the runner checked against the observer on this machine
+```
+
+```json
+{"slots": [
+  {"name": "idle", "kind": "idle", "seconds": 10},
+  {"name": "resident", "kind": "kernel", "op": "read", "footprint_mib": 8, "logical_mib": 16384},
+  {"name": "streaming", "kind": "kernel", "op": "read", "footprint_mib": 1024, "logical_mib": 16384},
+  {"name": "sham", "kind": "noop", "pace_ms": 10, "seconds": 10}
+]}
+```
+
+Every slot prints its own wall clock window and the payload bytes the program asked to move. The observer gives the bytes that really reached memory over the same window, so energy, payload and observed traffic line up per slot. Slot kinds and the full format: [docs/MANUAL.md](docs/MANUAL.md#schedules-for-energy-experiments).
+
 ## 🐍 From Python
 
 ```python

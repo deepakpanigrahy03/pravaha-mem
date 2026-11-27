@@ -102,3 +102,27 @@ pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple w
 * `python -m pravaha_mem.known_bytes DIRECTION TIMES SIZE_MIB` moves TIMES x SIZE_MIB: `h2d` (host to device: computer memory into the GPU, copy engines), `d2h` (device to host, copy engines), `d2d` (GPU buffer to GPU buffer, GPU code), `memset` (GPU code fills a buffer). `--help` explains everything. `PRAVAHA_KNOWN_PAUSE=S` sets the pause between setup and work (default 0.5 s); `PRAVAHA_KNOWN_WINDOW=1` prints when the work ran (used by verify).
 * Reader protocol v2 (stdout): `V 2`; `M names`; `C cupti_ns realtime_ns monotonic_ns`; `S idx t0 t1 v1..v5` (sectors); `E ok n | E busy | E error code`.
 * Tests without a GPU: `pip install .[test] && python -m pytest tests`. On a GB10 with pravaha installed: `python -m pytest -m gpu tests` (light).
+
+## Schedules for energy experiments
+
+`python -m pravaha_mem.schedule FILE.json [--device 0]` runs the slots of FILE in order, in one process with one CUDA context and every buffer prepared before the first slot, so slots differ only in the work they do.
+
+### Slot kinds
+| Kind | Keys | Work |
+|---|---|---|
+| `idle` | `seconds` | sleep |
+| `noop` | `pace_ms`, `seconds` | one empty kernel per pace (sham: the submission loop, no data) |
+| `kernel` | `op` read or write, `footprint_mib`, `logical_mib`, optional `placement` (device, pinned, managed, pageable) | passes over the footprint until `logical_mib` are done; `logical_mib` must be a multiple of `footprint_mib` |
+| `copy` | `direction` h2d or d2h, `host` pinned or pageable, `size_mib`, and `count`, or `pace_ms` with `seconds` | copies back to back, or one per pace |
+| `compute` | `iters`, `launches` | fused multiply adds on registers |
+| `overlap` | `compute` {`iters`, `launches`}, `transfer` (a copy or kernel part) | both issued on two streams at once |
+| `square` | `period_s`, `periods`, `on` (copy, kernel or noop part with `pace_ms`), `off` (idle or noop) | lock in modulation; every half reported |
+
+### Output (stdout)
+`SETUP {json}` buffers and compile, before any slot. `SLOT {json}` per slot: `index`, `name`, `kind`, `t0`, `t1` (ns, `time.time_ns()` clock), `ops`, `payload_bytes`, `check` (read checksum), `detail`. `HALF {json}` per square wave half: `slot`, `period`, `half`, `t0`, `t1`, `ops`, `payload_bytes`. `DONE {json}` totals. Exit 0 done, 1 CUDA error, 2 invalid schedule, 3 a check failed.
+
+### What the numbers are
+Payload bytes are program counted: what the code asked to move. The bytes that reached memory come from the observer over the slot's window; a read of a footprint inside the 24 MiB L2 reaches memory only on its first pass. A pageable copy may be staged through a pinned buffer by the driver. A square wave half includes its pacing waits; achieved rates follow from its payload and duration.
+
+### Verification
+`pravaha verify --schedule` runs a fixture under the observer and checks checksums, payloads, streaming and resident read misses, the sham, a copy and square wave timing, against `[schedule]` of `pravaha.ini`.
