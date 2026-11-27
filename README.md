@@ -34,9 +34,9 @@ On the GB10 the GPU has no memory of its own: every byte it reads or writes goes
 | 8 | save data with full provenance | `--csv FILE`, `--json FILE` |
 | 9 | GPU address translations (counts, not bytes) | `pravaha smmu status / run / observe` |
 | 10 | traffic per kernel (Nsight Compute) | `pravaha kernels -- CMD` |
-| 11 | remove it | `pravaha uninstall` |
-| 12 | GPU workload slots for energy experiments (timed, known bytes) | `pravaha schedule FILE.json` |
-| 13 | check the schedule runner on this machine | `pravaha verify --schedule` |
+| 11 | GPU workload slots for energy experiments (timed, known bytes) | `pravaha schedule FILE.json` |
+| 12 | check the schedule runner on this machine | `pravaha verify --schedule` |
+| 13 | remove it | `pravaha uninstall` |
 
 ## 🚀 Start
 
