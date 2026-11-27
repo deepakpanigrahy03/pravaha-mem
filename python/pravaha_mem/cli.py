@@ -135,7 +135,11 @@ def _parser():
                        formatter_class=argparse.RawDescriptionHelpFormatter,
                        description="Run the slots of FILE (idle, noop sham, kernel, copy, compute, overlap, "
                                    "square wave) in one process; print one line per slot.",
-                       epilog="example:\n  pravaha schedule my_schedule.json --json result.json")
+                       epilog="example:\n  pravaha schedule my_schedule.json --json result.json\n\n"
+                              "Design: measure rates with a short probe first; make each measured slot\n"
+                              "at least 2 s (traffic) or 60 s (energy); 1 s idle between slots; begin and\n"
+                              "end with idle; same logical_mib for resident vs streaming; a noop sham\n"
+                              "for paced work. Full guide: docs/MANUAL.md, Designing a schedule.")
     s.add_argument("file", help="schedule JSON")
     s.add_argument("--json", metavar="FILE", help="save slots, halves and totals as JSON")
     s.add_argument("--raw", action="store_true", help="print the machine lines instead of the table")

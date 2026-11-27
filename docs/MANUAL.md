@@ -124,5 +124,30 @@ pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple w
 ### What the numbers are
 Payload bytes are program counted: what the code asked to move. The bytes that reached memory come from the observer over the slot's window; a read of a footprint inside the 24 MiB L2 reaches memory only on its first pass. A pageable copy may be staged through a pinned buffer by the driver. A square wave half includes its pacing waits; achieved rates follow from its payload and duration.
 
-### Verification
-`pravaha verify --schedule` runs a fixture under the observer and checks checksums, payloads, streaming and resident read misses, the sham, a copy and square wave timing, against `[schedule]` of `pravaha.ini`.
+### The built in test (`pravaha verify --schedule`)
+A short probe first measures this machine's rates; each task below is then sized to last about `slot_seconds` (2 s), with `gap_s` (1 s) of idle between tasks. Settings: `[schedule]` of `pravaha.ini`.
+
+| # | Task | What it does | What the test expects |
+|---|---|---|---|
+| 1 | idle | waits `idle_s` | the background traffic level, subtracted from every other result |
+| 2 | streaming read | the GPU reads a 1 GiB block (far larger than the 24 MiB L2) repeatedly | every byte reaches memory: observed read misses per payload byte within `[verify] miss_tolerance` of 1 |
+| 3 | resident read | the GPU reads an 8 MiB block (inside L2) repeatedly | the cache serves the reads: observed misses per payload byte at most `resident_max_ratio` |
+| 4 | sham | empty GPU calls every `sham_pace_ms` | moves no data: memory traffic at most `sham_max_bytes_per_s` above the background |
+| 5 | copy | 256 MiB copies from CPU memory to the GPU | observed copy bytes per payload byte within `copy_tolerance` of 1 |
+| 6 | square wave | `square_periods` cycles: half copying, half empty calls | each half within `half_tolerance` of `square_period_s / 2`; off halves copy nothing |
+
+Exact checks need no counter: every read checksum matches, and payload equals passes times footprint.
+
+### Designing a schedule
+A schedule is an experiment you write down; the runner does exactly what it says and reports when each slot ran.
+
+1. **Measure the rates first.** Run a short probe (a few slots of each kind with small counts) with `pravaha schedule probe.json`; the table gives seconds and GB/s per slot on this machine. GN100 example: resident read 1,161 GB/s, streaming read 240 GB/s, copies 59 GB/s.
+2. **Make every measured slot long enough.** Traffic is sampled every 10 ms: at least 2 s per slot. Energy counters update about every 100 ms in steps of several joules: at least 60 s per slot for energy work. Size `logical_mib` or `count` from the probe rate: count = seconds x rate / bytes per operation.
+3. **Separate slots with idle.** At least 1 s of `idle` between measured slots, so a window widened for alignment never catches the neighbouring slot.
+4. **Begin and end with idle** (10 s or more): the background before and after, and a check that it did not drift.
+5. **Compare like with like.** For cache resident vs streaming, give both the same `logical_mib` (the same issued operations); choose a resident footprint well inside the 24 MiB L2 (8 MiB) and a streaming footprint far above it (1024 MiB or more).
+6. **Add a sham for paced work.** A `noop` slot with the same `pace_ms` has the same submission loop and no data: its energy and traffic are the cost of pacing alone.
+7. **Square waves for small effects.** Start with `period_s` 2 (1 s on, 1 s off) and enough periods for the effect size; the on part needs `pace_ms`.
+8. **Keep the machine quiet.** No other GPU program (stop model servers); the observer is device wide.
+
+A probe file is a measurement of speeds, not an experiment: it is short on purpose. The experiment file is written from its rates.

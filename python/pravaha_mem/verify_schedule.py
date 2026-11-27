@@ -1,6 +1,8 @@
 """pravaha verify --schedule: the schedule runner checked on the GPU, under the L2 observer.
 
-A short fixture schedule runs once while pravaha observes the whole GPU. Checks, kept
+A short probe first measures this machine's rates; then a fixture schedule, each task
+sized to last about slot_seconds with gap_s of idle between tasks (so no window catches
+its neighbour), runs once while pravaha observes the whole GPU. Checks, kept
 apart on purpose (as in verify --kernels):
 
 1. Exact (no counter): every read checksum matches; payload bytes equal the work the
@@ -30,9 +32,9 @@ import tempfile
 
 from .schedule import parse
 
-KEYS_SCHEDULE = {"idle_s": float, "streaming_mib": int, "streaming_passes": int, "resident_mib": int,
-                 "resident_passes": int, "resident_max_ratio": float, "sham_s": float, "sham_pace_ms": float,
-                 "sham_max_bytes_per_s": float, "copy_mib": int, "copy_count": int, "copy_tolerance": float,
+KEYS_SCHEDULE = {"idle_s": float, "slot_seconds": float, "gap_s": float, "streaming_mib": int,
+                 "resident_mib": int, "resident_max_ratio": float, "sham_pace_ms": float,
+                 "sham_max_bytes_per_s": float, "copy_mib": int, "copy_tolerance": float,
                  "square_period_s": float, "square_periods": int, "square_pace_ms": float,
                  "half_tolerance": float}
 KEYS_VERIFY = {"miss_tolerance": float, "window_pad_ms": float}
@@ -54,17 +56,41 @@ def settings(paths=None):
     return out
 
 
-def fixture(cfg):
-    """The validation schedule, from the settings."""
+def probe_schedule(cfg):
+    """A short schedule that measures this machine's rates for the three timed tasks."""
+    return {"slots": [
+        {"name": "probe_streaming", "kind": "kernel", "op": "read", "footprint_mib": cfg["streaming_mib"],
+         "logical_mib": cfg["streaming_mib"] * 4},
+        {"name": "probe_resident", "kind": "kernel", "op": "read", "footprint_mib": cfg["resident_mib"],
+         "logical_mib": cfg["resident_mib"] * 512},
+        {"name": "probe_copy", "kind": "copy", "direction": "h2d", "host": "pinned", "size_mib": cfg["copy_mib"],
+         "count": 4},
+    ]}
+
+
+def counts(probe, cfg):
+    """Operations per timed task so each lasts about slot_seconds, from the probe slots (at least 1)."""
+    by = {s["name"]: s for s in probe["slots"]}
+
+    def n(name):
+        s = by[name]
+        per_op = s["seconds"] / s["ops"] if s["ops"] and s["seconds"] > 0 else None
+        return max(1, int(round(cfg["slot_seconds"] / per_op))) if per_op else 1
+    return {"streaming_passes": n("probe_streaming"), "resident_passes": n("probe_resident"), "copy_count": n("probe_copy")}
+
+
+def fixture(cfg, n):
+    """The validation schedule: each task about slot_seconds long, gap_s of idle between tasks."""
     copy = {"direction": "h2d", "host": "pinned", "size_mib": cfg["copy_mib"]}
+    gap = lambda i: {"name": "gap_%d" % i, "kind": "idle", "seconds": cfg["gap_s"]}  # noqa: E731
     return {"pause_after_setup_s": 1, "slots": [
-        {"name": "idle", "kind": "idle", "seconds": cfg["idle_s"]},
+        {"name": "idle", "kind": "idle", "seconds": cfg["idle_s"]}, gap(1),
         {"name": "read_streaming", "kind": "kernel", "op": "read", "footprint_mib": cfg["streaming_mib"],
-         "logical_mib": cfg["streaming_mib"] * cfg["streaming_passes"]},
+         "logical_mib": cfg["streaming_mib"] * n["streaming_passes"]}, gap(2),
         {"name": "read_resident", "kind": "kernel", "op": "read", "footprint_mib": cfg["resident_mib"],
-         "logical_mib": cfg["resident_mib"] * cfg["resident_passes"]},
-        {"name": "sham", "kind": "noop", "pace_ms": cfg["sham_pace_ms"], "seconds": cfg["sham_s"]},
-        dict(copy, name="copy_h2d", kind="copy", count=cfg["copy_count"]),
+         "logical_mib": cfg["resident_mib"] * n["resident_passes"]}, gap(3),
+        {"name": "sham", "kind": "noop", "pace_ms": cfg["sham_pace_ms"], "seconds": cfg["slot_seconds"]}, gap(4),
+        dict(copy, name="copy_h2d", kind="copy", count=n["copy_count"]), gap(5),
         {"name": "square", "kind": "square", "period_s": cfg["square_period_s"], "periods": cfg["square_periods"],
          "on": dict(copy, kind="copy", pace_ms=cfg["square_pace_ms"]),
          "off": {"kind": "noop", "pace_ms": cfg["square_pace_ms"]}},
@@ -92,7 +118,7 @@ def evaluate(parsed, window_sum, cfg):
     for s in parsed["slots"]:
         if s.get("check") is not None:
             checks.append({"check": "checksum %s" % s["name"], "pass": bool(s["check"]["ok"]), "exact": True})
-    for name, key in (("read_streaming", "streaming_mib"), ("read_resident", "resident_mib")):
+    for name, key in (("read_streaming", "streaming_mib"), ("read_resident", "resident_mib")):  # exact
         s = slots[name]
         want = s["ops"] * cfg[key] * (1 << 20)
         checks.append({"check": "payload %s" % name, "exact": True, "pass": s["ops"] > 0 and s["payload_bytes"] == want})
@@ -129,8 +155,17 @@ def verify_schedule(json_path=None, cooldown_s=20.0, quiet=False):
     from .verify import _wait_for_headroom
     cfg = settings()
     _wait_for_headroom(cooldown_s)
+    probe = _run_file(probe_schedule(cfg))
+    if probe["done"] is None:
+        rep = {"pass": False, "error": "probe schedule failed: %s" % probe.get("stderr")}
+        if json_path:
+            with open(json_path, "w") as fh:
+                json.dump(rep, fh, indent=1)
+        print("schedule verify: FAIL (%s)" % rep["error"])
+        return rep
+    n = counts(probe, cfg)
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
-        json.dump(fixture(cfg), fh)
+        json.dump(fixture(cfg, n), fh)
         path = fh.name
     with observe() as m:
         p = subprocess.run([sys.executable, "-m", "pravaha_mem.schedule", path], capture_output=True, text=True)
@@ -140,7 +175,7 @@ def verify_schedule(json_path=None, cooldown_s=20.0, quiet=False):
         rep = {"pass": False, "error": "schedule exit %s: %s" % (p.returncode, (p.stderr or "")[-300:])}
     else:
         rep = evaluate(parsed, m._sum, cfg)
-    rep.update({"settings": cfg, "provenance": provenance(), "quality": m.quality()})
+    rep.update({"settings": cfg, "sized_counts": n, "provenance": provenance(), "quality": m.quality()})
     if json_path:
         with open(json_path, "w") as fh:
             json.dump(rep, fh, indent=1)
@@ -150,6 +185,18 @@ def verify_schedule(json_path=None, cooldown_s=20.0, quiet=False):
             print("%-6s %s%s" % ({True: "PASS", False: "FAIL", None: "N/A"}[c["pass"]], c["check"], val))
         print("schedule verify: %s" % ("PASS" if rep["pass"] else "FAIL"))
     return rep
+
+
+def _run_file(sched):
+    """Run a schedule in a child process; parsed lines plus stderr tail."""
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump(sched, fh)
+        path = fh.name
+    try:
+        p = subprocess.run([sys.executable, "-m", "pravaha_mem.schedule", path], capture_output=True, text=True)
+    finally:
+        os.unlink(path)
+    return dict(parse(p.stdout.splitlines()), stderr=(p.stderr or "")[-300:])
 
 
 def main(argv=None):

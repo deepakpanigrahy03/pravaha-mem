@@ -4,9 +4,9 @@ import pytest
 from pravaha_mem import schedule, verify_schedule as vs
 
 MIB = 1 << 20
-CFG = {"idle_s": 3, "streaming_mib": 1024, "streaming_passes": 4, "resident_mib": 8, "resident_passes": 512,
-       "resident_max_ratio": 0.05, "sham_s": 3, "sham_pace_ms": 10, "sham_max_bytes_per_s": 2e8,
-       "copy_mib": 256, "copy_count": 8, "copy_tolerance": 0.05, "square_period_s": 2.0, "square_periods": 4,
+CFG = {"idle_s": 3, "slot_seconds": 2.0, "gap_s": 1.0, "streaming_mib": 1024, "resident_mib": 8,
+       "resident_max_ratio": 0.05, "sham_pace_ms": 10, "sham_max_bytes_per_s": 2e8,
+       "copy_mib": 256, "copy_tolerance": 0.05, "square_period_s": 2.0, "square_periods": 4,
        "square_pace_ms": 50, "half_tolerance": 0.05, "miss_tolerance": 0.05, "window_pad_ms": 40}
 S = 1_000_000_000
 
@@ -49,8 +49,18 @@ def by_name(rep):
     return {c["check"]: c for c in rep["checks"]}
 
 
-def test_fixture_is_a_valid_schedule():
-    assert len(schedule.validate(vs.fixture(CFG))) == 6
+def test_fixture_is_a_valid_schedule_with_gaps():
+    sl = schedule.validate(vs.fixture(CFG, {"streaming_passes": 450, "resident_passes": 280000, "copy_count": 440}))
+    assert len(sl) == 11 and [s["kind"] for s in sl[1::2]] == ["idle"] * 5
+
+
+def test_counts_size_each_task_to_slot_seconds():
+    probe = {"slots": [{"name": "probe_streaming", "seconds": 0.0179, "ops": 4},
+                       {"name": "probe_resident", "seconds": 0.0036, "ops": 512},
+                       {"name": "probe_copy", "seconds": 0.018, "ops": 4}]}
+    n = vs.counts(probe, CFG)
+    assert n["streaming_passes"] == 447 and n["copy_count"] == 444 and 280000 <= n["resident_passes"] <= 290000
+    assert vs.probe_schedule(CFG)["slots"][0]["footprint_mib"] == 1024
 
 
 def test_all_pass_on_good_data():
