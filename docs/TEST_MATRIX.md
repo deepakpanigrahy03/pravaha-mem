@@ -7,8 +7,8 @@ Legend: ✅ passed · ❌ failed · ⬜ not yet tested · — not applicable
 ## Machines
 | id | machine | OS, kernel | driver | CUDA | date |
 |---|---|---|---|---|---|
-| GN100 | Acer Veriton GN100 (GB10) | Linux, with desktop | 580.159.03 | 13.0 | 2026-11-18 |
-| SPARK | NVIDIA DGX Spark (GB10) | Linux, headless | 580.159.03 | 13.0 | 2026-11-18, 2026-11-20 |
+| GN100 | Acer Veriton GN100 (GB10) | Linux, with desktop | 580.159.03 | 13.0 | 2026-11-18, 2026-11-27 |
+| SPARK | NVIDIA DGX Spark (GB10) | Linux, headless | 580.159.03 | 13.0 | 2026-11-18, 2026-11-20, 2026-11-27 |
 
 ## Features
 | # | feature | command | GN100 | SPARK |
@@ -29,9 +29,11 @@ Legend: ✅ passed · ❌ failed · ⬜ not yet tested · — not applicable
 | 14 | SMMU translations | `smmu status`, `smmu run -- CMD` | ✅ 7 GPU units; 1.30 M requests for 2 GiB | ✅ 7 GPU units of 17; 1.27 M requests for 2 GiB |
 | 15 | per kernel traffic | `sudo env PATH=$PATH pravaha kernels -- CMD` | ✅ PyTorch fill + sum of 64 MiB: 0.067 GB written, 0.067 GB read (driver memset/memcpy not visible to Nsight Compute) | ✅ same: 0.067 GB written, 0.067 GB read |
 | 16 | uninstall leaves nothing; status explains | `pravaha uninstall`, `status`, `install` | ✅ nothing left; status: not ready + fix line | ✅ same |
-| 17 | unit tests (no GPU) | `python -m pytest tests` | ✅ 3 passed | ✅ 3 passed |
-| 18 | GPU tests | `python -m pytest -m gpu tests` | ✅ 7 passed (one earlier failure: no background subtraction in that test; fixed) | ✅ 7 passed |
+| 17 | unit tests (no GPU) | `python -m pytest tests` | ✅ 30 passed (1.2.0) | ✅ 30 passed (1.2.0) |
+| 18 | GPU tests | `python -m pytest -m gpu tests` | ✅ 8 passed (1.2.0, includes the schedule runner; one earlier failure: no background subtraction in that test; fixed) | ✅ 8 passed (1.2.0) |
 | 19 | overhead of the separate reader | `python validation/overhead_ab.py` | ✅ -0.04%, 20 runs each (spread 15%) | ✅ -0.53%, 20 runs each (spread 2%) |
+| 20 | schedule runner, every slot kind | `pravaha schedule examples/schedules/probe_rates.json` | ✅ checks ok; resident read 1,161 GB/s, streaming 240 GB/s, copies 59 GB/s (pinned = pageable) | ✅ checks ok; resident 1,165 GB/s, streaming 242 GB/s, copies 59 GB/s |
+| 21 | schedule verification, all checks | `pravaha verify --schedule` | ✅ 10 of 10: streaming 1.000, resident 1.8e-5, copy 1.000, sham 87 MB/s (desktop), halves 0.07% | ✅ 10 of 10: streaming 1.000, resident 3.7e-6, copy 1.000, sham 0.1 MB/s, halves 0.08% |
 
 Details and raw outputs: [VALIDATION.md](VALIDATION.md) and the [validation/](../validation) folder.
 

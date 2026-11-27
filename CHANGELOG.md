@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (unreleased)
+## 1.2.0 (2026-11-27)
 
 New
 - `schedule`: a timestamped schedule of GPU workload slots for energy experiments, run in one process with one CUDA context so slots differ only in their work. Slot kinds: `idle`; `noop` (paced empty kernels, a sham control with the submission loop of the other slots and no data); `kernel` (read or write over a chosen footprint until a logical byte count is done, so a cache resident and a streaming footprint can issue the same operations; read checksums verified outside the slot); `copy` (host to device or device to host, pinned or pageable host memory, back to back or paced); `compute` (an arithmetic kernel on registers); `overlap` (a compute part and a copy or kernel part on two streams); `square` (lock in modulation: timed on and off halves, each reported). Machine lines `SETUP`, `SLOT`, `HALF`, `DONE` carry wall clock windows (the clock of `time.time_ns()`) and program counted payload bytes. Compiled at run time with NVRTC, nothing to build. `python -m pravaha_mem.schedule FILE.json`; Python: `schedule.validate()`, `run_schedule()`, `parse()`.
