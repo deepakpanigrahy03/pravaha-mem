@@ -87,3 +87,17 @@ rc, m = pv.run(None, seconds=60)                      # like `pravaha observe --
 
 ## 11. Command line from scripts
 `pravaha run --json result.json -- CMD` and `pravaha observe --seconds N --csv samples.csv` work unattended: no sudo, no prompts. Exit code: the command's exit code for `run`, 0 for `observe`.
+
+## Schedules from Python
+```python
+import json
+from pravaha_mem import schedule
+sched = json.load(open("my_schedule.json"))
+schedule.validate(sched)                       # raises ScheduleError before any GPU work
+# run it as a child process and read the machine lines:
+#   pravaha schedule my_schedule.json --raw    -> SETUP, SLOT, HALF, DONE lines
+out = schedule.parse(open("raw_output.txt").read().splitlines())
+for s in out["slots"]:
+    print(s["name"], s["t0"], s["t1"], s["payload_bytes"])   # windows on the system clock
+```
+Join each slot window with `pv.observe()` samples (same clock) for observed traffic, or with an energy log for joules per slot.

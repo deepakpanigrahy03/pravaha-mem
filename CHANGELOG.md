@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.1 (2026-11-27)
+Docs only, no code change: full documentation review (listed under 1.2.0 Docs below); PyPI page now shows the corrected README.
+
 ## 1.2.0 (2026-11-27)
 
 New
@@ -7,7 +10,9 @@ New
 - `pravaha verify --schedule`: the schedule runner checked under the observer. Exact: checksums and payload. Observed, background subtracted: streaming read misses per payload byte within `[verify] miss_tolerance`; resident read misses per payload byte at most `resident_max_ratio`; sham memory traffic at most `sham_max_bytes_per_s`; copy bytes per payload byte within `copy_tolerance`; square wave halves within `half_tolerance`. Settings in `[schedule]` of `pravaha.ini`.
 
 Docs
-- README and MANUAL: schedules for energy experiments.
+- Schedules for energy experiments: README, MANUAL (section 10: slot kinds, output, the built in test, designing a schedule), LEARN lesson 9 (the idea), TUTORIAL lesson 7 (hands on), DEVELOPER_GUIDE (from Python), RESEARCHER_GUIDE (accuracy rows, checklist).
+- `verify --kernels` and `known_kernel` (1.1.0) now in the README, MANUAL and THE_WHOLE_IDEA command lists.
+- Corrected: thermal guard values in MANUAL and THE_WHOLE_IDEA (10 C and 5 C from `pravaha.ini` since 1.1.0, not 35 C and 15 C); RESEARCHER_GUIDE overhead (measured in 1.0.1); README install line (on PyPI); LEARN now nine lessons; README lists LEARN.
 
 ## 1.1.0 (2026-11-24)
 

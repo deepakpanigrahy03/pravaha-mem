@@ -6,6 +6,7 @@ The most useful contribution: run pravaha on your machine and tell us what happe
 pravaha status
 pravaha verify --json verify.json
 python -m pytest -m gpu tests          # optional, from a clone of the repository
+pravaha verify --schedule --json verify_schedule.json   # optional: the schedule runner
 ```
 Open an issue titled "Test report: <your machine>" with the `status` output and `verify.json`. We add it to [docs/TEST_MATRIX.md](docs/TEST_MATRIX.md). All of these commands are light (a few GiB of copies and simple writes and reads).
 

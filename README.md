@@ -26,7 +26,7 @@ On the GB10 the GPU has no memory of its own: every byte it reads or writes goes
 |---|---|---|
 | 1 | allow counter reading, once per machine | `pravaha install` |
 | 2 | is this machine ready? | `pravaha status` |
-| 3 | check the numbers against known bytes | `pravaha verify` |
+| 3 | check the numbers on this machine: copies, kernel placements, the schedule runner | `pravaha verify`, `--kernels`, `--schedule` |
 | 4 | traffic while a program runs | `pravaha run -- CMD` |
 | 5 | traffic over a time window, e.g. a running LLM server | `pravaha observe --seconds 60` |
 | 6 | live samples | `pravaha observe --live` |
@@ -35,8 +35,7 @@ On the GB10 the GPU has no memory of its own: every byte it reads or writes goes
 | 9 | GPU address translations (counts, not bytes) | `pravaha smmu status / run / observe` |
 | 10 | traffic per kernel (Nsight Compute) | `pravaha kernels -- CMD` |
 | 11 | GPU workload slots for energy experiments (timed, known bytes) | `pravaha schedule FILE.json` |
-| 12 | check the schedule runner on this machine | `pravaha verify --schedule` |
-| 13 | remove it | `pravaha uninstall` |
+| 12 | remove it | `pravaha uninstall` |
 
 ## 🚀 Start
 
@@ -51,7 +50,7 @@ sudo apt install python3-venv gcc g++        # venv support, and compilers to bu
 ```bash
 python3 -m venv ~/pravaha-venv
 source ~/pravaha-venv/bin/activate           # in every new terminal before using pravaha
-pip install pravaha-mem                      # until it is on PyPI: pip install git+https://github.com/deepakpanigrahy03/pravaha-mem
+pip install pravaha-mem
 pravaha install                              # once per machine: asks for the admin password once
 pravaha status                               # "ready", or exactly what is missing and how to fix it
 pravaha verify                               # optional: about 3 minutes, light work only
@@ -124,7 +123,7 @@ pravaha schedule my_schedule.json                 # run it: one line per slot
 pravaha schedule my_schedule.json --json out.json # and save the result
 pravaha verify --schedule                         # the runner checked against the observer on this machine
 ```
-Ready made examples: [examples/schedules/](examples/schedules) (probe rates, resident vs streaming, square wave). Step by step: [docs/LEARN.md](docs/LEARN.md), lesson 9.
+Ready made examples: [examples/schedules/](examples/schedules) (probe rates, resident vs streaming, square wave). Step by step: [Tutorial](docs/TUTORIAL.md) lesson 7; the idea: [Learn](docs/LEARN.md) lesson 9.
 
 ```json
 {"slots": [
@@ -135,7 +134,7 @@ Ready made examples: [examples/schedules/](examples/schedules) (probe rates, res
 ]}
 ```
 
-Every slot prints its own wall clock window and the payload bytes the program asked to move. The observer gives the bytes that really reached memory over the same window, so energy, payload and observed traffic line up per slot. Slot kinds and the full format: [docs/MANUAL.md](docs/MANUAL.md#schedules-for-energy-experiments).
+Every slot prints its own wall clock window and the payload bytes the program asked to move. The observer gives the bytes that really reached memory over the same window, so energy, payload and observed traffic line up per slot. Slot kinds and the full format: [docs/MANUAL.md](docs/MANUAL.md#10-schedules-for-energy-experiments).
 
 ## 🐍 From Python
 
@@ -185,6 +184,7 @@ Samples carry the system clock; on GB10 it agrees with the GPU's sample clock wi
 |---|---|
 | [The whole idea](docs/THE_WHOLE_IDEA.md) | understand everything in one read: start here |
 | [GB10 architecture](docs/GB10_ARCHITECTURE.md) | understand the GB10, NVLink C2C and what pravaha counts (with diagrams) |
+| [Learn](docs/LEARN.md) | understand why it works: nine short lessons, from the machine to controlled traffic |
 | [Tutorial](docs/TUTORIAL.md) | learn by running: each lesson one command, with the expected output |
 | [Manual](docs/MANUAL.md) | look up every command, option, column and word |
 | [Developer guide](docs/DEVELOPER_GUIDE.md) | use pravaha inside your Python programs and harnesses |

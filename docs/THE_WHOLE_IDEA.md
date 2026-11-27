@@ -80,7 +80,7 @@ pravaha run -- CMD           measure while CMD runs
 pravaha observe --seconds N  measure a time window (a server already running)
 ```
 In Python: `with pravaha_mem.observe() as m: m.mark("step") ...`.
-Also: `pravaha smmu` (address translations, a separate counter, never bytes), `pravaha kernels` (traffic per named kernel).
+Also: `pravaha smmu` (address translations, a separate counter, never bytes), `pravaha kernels` (traffic per named kernel), `pravaha verify --kernels` (known kernels in each memory placement), `pravaha schedule` (timed GPU steps with known bytes, for energy experiments; `verify --schedule` checks it).
 
 ## 10. Where pravaha lives on your machine
 | part | installed by | where | how often |
@@ -91,7 +91,7 @@ Also: `pravaha smmu` (address translations, a separate counter, never bytes), `p
 The program you measure needs nothing installed. pravaha reads the counters only while a measurement runs (`run`, `observe`, `verify`, `pv.observe()`); there is no background service.
 
 ## 11. Words
-* **headroom**: how many degrees the GPU is below its thermal limit. `nvidia-smi` reports it (`temperature.gpu.tlimit`); `pravaha status` shows it. At about -5 the hardware switches the machine off; `verify` only starts with 35 or more and stops below 15.
+* **headroom**: how many degrees the GPU is below its thermal limit. `nvidia-smi` reports it (`temperature.gpu.tlimit`); `pravaha status` shows it. At about -5 the hardware switches the machine off; `verify` only starts with 10 or more and stops below 5 (`[thermal]` of `pravaha.ini`).
 * **host / device**: NVIDIA's words for the computer side and the GPU.
 * **sector**: 32 bytes, the unit the L2 counts in.
 * **hit / miss**: data found in L2 / data that had to cross C2C.

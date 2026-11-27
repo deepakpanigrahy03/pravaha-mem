@@ -1,6 +1,6 @@
 # pravaha tutorial
 
-Each lesson: one idea, one command, the output to expect (measured on an Acer GN100).
+Each lesson: one idea, one command, the output to expect (measured on an Acer GN100). Why each step works: [LEARN](LEARN.md).
 
 ## Lesson 0: install and check
 ```bash
@@ -77,3 +77,21 @@ These count translation requests and misses, not bytes: useful to study page siz
 | pravaha-reader not found | `pravaha install` |
 | insufficient privileges | `pravaha install` again |
 | a check fails in `verify` | another program was busy on the GPU; run again when it is quieter |
+
+## Lesson 7: write and run a schedule
+A schedule is a JSON file of GPU steps; the ideas behind it are in [LEARN](LEARN.md) lesson 9.
+```bash
+pravaha schedule --template > my_test.json          # a commented starter file to edit
+pravaha schedule examples/schedules/probe_rates.json # measure this machine's speeds first
+```
+```
+slot                         kind       seconds      ops payload GiB      GB/s  check
+read_resident_8mib           kernel        0.01     2048      16.000   1161.20  ok
+read_streaming_1024mib       kernel        0.07       16      16.000    239.59  ok
+copy_h2d_pinned_256mib       copy          0.15       32       8.000     59.16
+```
+Size your slots from those rates: at least 2 s per measured slot for traffic, 60 s for energy, with idle between slots (`logical_mib = seconds x rate / 1,048,576`, a multiple of `footprint_mib`). Then run it and save the result:
+```bash
+pravaha schedule my_test.json --json my_result.json
+```
+Run `pravaha observe` (or A-LEMS) at the same time to get each slot's observed traffic and energy. `pravaha verify --schedule` checks the runner on your machine (about 30 s); every line should say PASS. Examples to start from: `examples/schedules/` (probe rates, resident vs streaming, square wave). Design rules: [MANUAL](MANUAL.md#10-schedules-for-energy-experiments), "Designing a schedule".

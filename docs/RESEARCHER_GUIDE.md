@@ -27,6 +27,8 @@ The `_realtime` counters use a low cost counting method that NVIDIA describes as
 | GPU code reads | 4 GiB | 0.9972 to 1.0000 |
 | PyTorch `.cuda()` | 8 minus 4 copies of 1 GiB | 3.9999 / 4 |
 | vLLM decode, Qwen3 4B | 400 tokens | 7.52 GiB per token vs 7.49 GiB weights |
+| schedule, streaming read (1 GiB footprint) | about 2 s | 1.000 observed per payload byte (GN100, Spark) |
+| schedule, resident read (8 MiB, inside L2) | about 2 s | 1.8e-5 (GN100), 3.7e-6 (Spark): reuse is not counted |
 
 Host buffer type does not change copy counts (pinned, registered, 2 MiB huge pages, pageable within 0.2 %).
 
@@ -40,7 +42,7 @@ Host buffer type does not change copy counts (pinned, registered, 2 MiB huge pag
 Values are device wide. Report the raw value, the idle baseline (`--idle`, `m.baseline()`), and the subtracted estimate separately; the baseline's variation shows whether subtraction is meaningful. `verify` uses background subtraction plus the middle of three runs.
 
 ## 5. Overhead
-pravaha does not modify or instrument the measured program; it reads counters from its own process. Its overhead has not yet been quantified with an A/B test; this is listed in the [test matrix](TEST_MATRIX.md). Run any A/B test with light workloads and cool downs (see the safety note in the manual).
+pravaha does not modify or instrument the measured program; it reads counters from its own process. Measured with a light A/B test (`validation/overhead_ab.py`, 20 runs each): -0.04% on the GN100 and -0.53% on the DGX Spark, inside the run to run spread ([VALIDATION.md](VALIDATION.md) section 8).
 
 ## 6. Reproducibility checklist for a paper
 1. `pravaha status` output (GPU, driver, CUDA).
@@ -48,6 +50,7 @@ pravaha does not modify or instrument the measured program; it reads counters fr
 3. Results saved with `--json` (provenance, metric definitions, conversions, quality, baseline).
 4. The interval used, and whether phases were shorter than 10 samples.
 5. What else ran on the GPU (device wide counters).
+6. If you used schedules: the schedule file, its `--json` result, and `pravaha verify --schedule --json` on the machine used.
 
 ## 7. Cite
 Use [CITATION.cff](../CITATION.cff) (GitHub shows "Cite this repository").

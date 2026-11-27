@@ -1,4 +1,4 @@
-# pravaha manual (1.0)
+# pravaha manual
 
 ## 1. What pravaha measures
 | term | meaning | how |
@@ -18,6 +18,7 @@ All values are **device wide**: every process on the GPU during the window. Live
 | `pravaha uninstall [--prefix DIR]` | remove exactly the MANIFEST files (sha256 checked), the folder and any parents install created; confirm |
 | `pravaha status` | GPU, driver, CUDA; each reader and its capability; counters free or busy; temperature and thermal headroom |
 | `pravaha verify [--json FILE] [--cooldown S]` | light known byte checks with a thermal guard; PASS or FAIL per check |
+| `pravaha verify --kernels [--json FILE]` | known GPU kernels reading and writing in each memory placement (device, pinned, managed, pageable) |
 | `pravaha run [opts] -- CMD` | observe while CMD runs; stops when CMD ends; Ctrl+C stops CMD and still prints results |
 | `pravaha observe [opts] [--seconds N] [--live]` | observe for N seconds or until Ctrl+C; `--live` prints each sample as CSV |
 | `pravaha smmu status` | the GB10's SMMU counters and which one belongs to the GPU |
@@ -82,7 +83,7 @@ The table prints this as the row `run - idle` (never below zero); the JSON has t
 | thermal headroom too low | `verify` stopped to protect the machine; let it cool |
 
 ## 7. Safety
-pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple writes and reads of a few GiB, about 1 s of GPU work per check, with a cool down between checks and a thermal headroom guard (start at 35 C or more of headroom, stop below 15 C). pravaha waits 1 s between stopping and starting readers, as the driver needs time to release the counters.
+pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple writes and reads of a few GiB, about 1 s of GPU work per check, with a cool down between checks and a thermal headroom guard (start at `start_c` = 10 C or more of headroom, stop below `abort_c` = 5 C; `[thermal]` of `pravaha.ini`, replaceable by `PRAVAHA_CONFIG`). pravaha waits 1 s between stopping and starting readers, as the driver needs time to release the counters.
 
 ## 8. Words used
 | word | meaning |
@@ -103,9 +104,10 @@ pravaha's own workloads (`verify`, `known_bytes`) are light: copies and simple w
 * `PRAVAHA_READER`: path of another reader binary. `PRAVAHA_PMCG`: path of another SMMU reader.
 * `python -m pravaha_mem.known_bytes DIRECTION TIMES SIZE_MIB` moves TIMES x SIZE_MIB: `h2d` (host to device: computer memory into the GPU, copy engines), `d2h` (device to host, copy engines), `d2d` (GPU buffer to GPU buffer, GPU code), `memset` (GPU code fills a buffer). `--help` explains everything. `PRAVAHA_KNOWN_PAUSE=S` sets the pause between setup and work (default 0.5 s); `PRAVAHA_KNOWN_WINDOW=1` prints when the work ran (used by verify).
 * Reader protocol v2 (stdout): `V 2`; `M names`; `C cupti_ns realtime_ns monotonic_ns`; `S idx t0 t1 v1..v5` (sectors); `E ok n | E busy | E error code`.
+* `python -m pravaha_mem.known_kernel PLACEMENT OP TIMES SIZE_MIB` reads or writes an exact amount in a chosen placement (device, pinned, managed, pageable); `--query` lists the supported placements (used by `verify --kernels`).
 * Tests without a GPU: `pip install .[test] && python -m pytest tests`. On a GB10 with pravaha installed: `python -m pytest -m gpu tests` (light).
 
-## Schedules for energy experiments
+## 10. Schedules for energy experiments
 
 `pravaha schedule FILE.json [--json OUT] [--raw] [--device N]` runs the slots of FILE in order (`pravaha schedule --template` prints a commented starter file; `--json` saves slots, halves and totals; `--raw` prints the machine lines instead of the table), in one process with one CUDA context and every buffer prepared before the first slot, so slots differ only in the work they do.
 

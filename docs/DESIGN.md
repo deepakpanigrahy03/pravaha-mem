@@ -1,5 +1,7 @@
 # pravaha-mem 1.0: system design (revision 2)
 
+> The design of release 1.0, kept as written. Later changes: thermal limits moved to `[thermal]` of `pravaha.ini` (1.1.0: start at 10 C headroom, stop below 5 C); `verify --kernels` and `known_kernel` (1.1.0); `schedule` and `verify --schedule` (1.2.0). Current commands: [MANUAL.md](MANUAL.md).
+
 Revision 2 adds: precise terms (L2, memory, C2C), the byte conversion and its reason, `cap_perfmon` (tested), installer safeguards, device wide wording, baseline reporting, clock mapping, boundary samples, sampling validation, loss accounting, a narrower meaning of PASS, provenance, metadata, and safety rules for the user's machine.
 
 ## 1. Problem

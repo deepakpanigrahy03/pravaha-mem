@@ -1,4 +1,4 @@
-# Learn pravaha in eight lessons
+# Learn pravaha in nine lessons
 
 A short course, in the order the ideas build on each other. Each lesson ends with one thing to try on a GB10. All commands are light: they copy or write a few GiB, never heavy compute.
 
@@ -65,36 +65,18 @@ An unmodified vLLM server running Mistral 7B: each generated token reads 13.47 G
 
 Try: [examples/03_llm_bytes_per_token.py](../examples/03_llm_bytes_per_token.py) on your own model.
 
+## Lesson 9: controlled traffic (schedules)
+Lessons 1 to 8 watch programs you did not write. To learn what traffic costs, you also need traffic you control: known amounts, in known time windows. A schedule is that: a written list of GPU steps (idle, reads, writes, copies, empty calls, on and off patterns) that `pravaha schedule` runs in order. Every step reports its own time window and the bytes the program asked to move (the payload); pravaha observes, over the same window, the bytes that really reached memory.
+
+The key result: the same work, two footprints. Reading an 8 MiB block 512 times and a 1 GiB block 4 times both ask for 4 GiB. For the 1 GiB block, 1.000 bytes reach memory per byte asked; for the 8 MiB block, 0.00002 (GN100), because the block fits the 24 MiB L2 and only the first pass misses. Same program, same payload, five orders of magnitude apart in what crosses C2C: Lesson 3 made visible.
+
+Why it matters: every step has a timed window on the system clock, so energy meters (A-LEMS, or any power log) and traffic join step by step. That turns "how many bytes cross C2C" into "what does a byte across C2C cost".
+
+Try: [Tutorial](TUTORIAL.md) lesson 7 (write and run a schedule), then `pravaha verify --schedule`.
+
 ## Where next
+* Run it yourself, step by step: [TUTORIAL.md](TUTORIAL.md)
 * Every command and option: [MANUAL.md](MANUAL.md)
 * Using pravaha in your own Python: [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)
 * The evidence behind every number: [VALIDATION.md](VALIDATION.md) and [TEST_MATRIX.md](TEST_MATRIX.md)
 * Research uses and limits: [RESEARCHER_GUIDE.md](RESEARCHER_GUIDE.md)
-
-## Lesson 9: your first schedule
-
-A schedule is a written experiment: a list of GPU steps (slots) that `pravaha schedule` runs in order, printing when each one ran and how many bytes it moved. Run `pravaha observe` (or A-LEMS) at the same time, and every slot gets its observed traffic, and its energy, over the same clock.
-
-**1. Get a starter file.**
-```bash
-pravaha schedule --template > my_test.json
-```
-It has an idle start, a streaming read, a gap, a copy and an idle end. Ready made examples: `examples/schedules/` (probe_rates, resident_vs_streaming, square_wave).
-
-**2. Measure your machine's speeds.**
-```bash
-pravaha schedule examples/schedules/probe_rates.json
-```
-The table shows seconds and GB/s per slot. A GN100 gives about 1,161 GB/s for a read that fits the 24 MiB L2, 240 GB/s for a read from memory, and 59 GB/s for copies.
-
-**3. Size your slots.** A slot must last long enough to be measured: at least 2 s for traffic (sampled every 10 ms), at least 60 s for energy (counters update about every 100 ms). For a read: `logical_mib = seconds x rate / 1,048,576`, rounded to a multiple of `footprint_mib`. Example: 60 s of streaming at 240 GB/s is about 13,730,000 MiB.
-
-**4. Run it and read the table.**
-```bash
-pravaha schedule my_test.json --json my_result.json
-```
-One line per slot: kind, seconds, operations, payload GiB, GB/s, check. Payload is what the program asked to move; the observer shows what reached memory.
-
-**5. Check your design.** Idle between measured slots (so windows never overlap), the same `logical_mib` when you compare two kinds of read, a `noop` sham when the work is paced, nothing else on the GPU.
-
-**Exercise.** Write a schedule that compares an 8 MiB read with a 1,024 MiB read of the same total size, run it under `pravaha observe`, and explain why the observed bytes differ by about a thousand times while the payload is the same.

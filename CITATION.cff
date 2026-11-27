@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use pravaha-mem, please cite the software (DOI below) and the paper in preferred-citation."
 title: "pravaha-mem: measuring GPU memory traffic on the NVIDIA GB10 without C2C telemetry"
-version: 1.2.0
+version: 1.2.1
 doi: 10.5281/zenodo.24355574
 date-released: '2026-11-27'
 license: MIT
