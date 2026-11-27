@@ -1,0 +1,46 @@
+{
+  "comment": "Cache resident vs streaming read with the same work (same logical_mib), sized for about 60 s of streaming on a GN100 (streaming 240 GB/s, resident 1,161 GB/s, so the resident slot finishes sooner; compare energy per byte). Idle between slots so windows never overlap; the sham (empty calls, no data) is the reference for the cost of the GPU being kept busy. Size logical_mib for your machine from probe_rates.json.",
+  "pause_after_setup_s": 2,
+  "slots": [
+    {
+      "name": "idle_before",
+      "kind": "idle",
+      "seconds": 30
+    },
+    {
+      "name": "read_streaming",
+      "kind": "kernel",
+      "op": "read",
+      "footprint_mib": 1024,
+      "logical_mib": 13729792
+    },
+    {
+      "name": "gap_1",
+      "kind": "idle",
+      "seconds": 10
+    },
+    {
+      "name": "read_resident",
+      "kind": "kernel",
+      "op": "read",
+      "footprint_mib": 8,
+      "logical_mib": 13729792
+    },
+    {
+      "name": "gap_2",
+      "kind": "idle",
+      "seconds": 10
+    },
+    {
+      "name": "sham",
+      "kind": "noop",
+      "pace_ms": 10,
+      "seconds": 60
+    },
+    {
+      "name": "idle_after",
+      "kind": "idle",
+      "seconds": 30
+    }
+  ]
+}

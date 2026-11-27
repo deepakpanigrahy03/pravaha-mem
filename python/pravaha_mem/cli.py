@@ -140,7 +140,8 @@ def _parser():
                               "at least 2 s (traffic) or 60 s (energy); 1 s idle between slots; begin and\n"
                               "end with idle; same logical_mib for resident vs streaming; a noop sham\n"
                               "for paced work. Full guide: docs/MANUAL.md, Designing a schedule.")
-    s.add_argument("file", help="schedule JSON")
+    s.add_argument("file", nargs="?", help="schedule JSON")
+    s.add_argument("--template", action="store_true", help="print a commented starter schedule and exit")
     s.add_argument("--json", metavar="FILE", help="save slots, halves and totals as JSON")
     s.add_argument("--raw", action="store_true", help="print the machine lines instead of the table")
     s.add_argument("--device", type=int, default=0)
@@ -224,6 +225,12 @@ def main(argv=None):
             return _err("usage: pravaha smmu status | run -- CMD | observe [--seconds N]")
         if a.verb == "schedule":
             from .schedule import cli as schedule_cli
+            if a.template:
+                from .schedule import TEMPLATE
+                print(TEMPLATE, end="")
+                return 0
+            if not a.file:
+                return _err("usage: pravaha schedule FILE.json [--json OUT] [--raw]   (or --template)")
             return schedule_cli(a.file, a.device, a.raw, a.json)
         if a.verb == "kernels":
             from .kernels import kernel_traffic, probe

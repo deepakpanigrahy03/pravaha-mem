@@ -1,0 +1,17 @@
+{
+  "comment": "Measure this machine's speeds before designing an experiment. Every slot is short on purpose: the table of `pravaha schedule probe_rates.json` gives seconds and GB/s per slot, and you size the real slots from those rates (count = seconds x rate / bytes per operation).",
+  "pause_after_setup_s": 2,
+  "slots": [
+    {"name": "idle_before", "kind": "idle", "seconds": 10},
+    {"name": "read_resident_8mib", "kind": "kernel", "op": "read", "footprint_mib": 8, "logical_mib": 16384,
+     "comment": "8 MiB fits the 24 MiB GPU L2: after the first pass the cache serves the reads"},
+    {"name": "read_streaming_1024mib", "kind": "kernel", "op": "read", "footprint_mib": 1024, "logical_mib": 16384,
+     "comment": "1 GiB is far larger than L2: every byte comes from memory (same 16 GiB of work as above)"},
+    {"name": "sham_noop_10ms", "kind": "noop", "pace_ms": 10, "seconds": 10,
+     "comment": "empty GPU calls: the cost of the submission loop with no data"},
+    {"name": "copy_h2d_pinned_256mib", "kind": "copy", "direction": "h2d", "host": "pinned", "size_mib": 256, "count": 32},
+    {"name": "copy_d2h_pinned_256mib", "kind": "copy", "direction": "d2h", "host": "pinned", "size_mib": 256, "count": 32},
+    {"name": "copy_h2d_pageable_256mib", "kind": "copy", "direction": "h2d", "host": "pageable", "size_mib": 256, "count": 32},
+    {"name": "idle_after", "kind": "idle", "seconds": 10}
+  ]
+}

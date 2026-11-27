@@ -164,3 +164,11 @@ def test_table_is_readable():
                       "off": {"kind": "idle"}}])
     t = sch.table(out)
     assert "resident" in t and "ok" in t and "square wave: 2 halves (1 on)" in t and "checks ok" in t
+
+
+def test_template_and_examples_validate():
+    import pathlib
+    assert len(sch.validate(json.loads(sch.TEMPLATE))) == 5
+    ex = pathlib.Path(__file__).resolve().parents[1] / "examples" / "schedules"
+    for name in ("probe_rates.json", "resident_vs_streaming.json", "square_wave.json"):
+        assert sch.validate(json.loads((ex / name).read_text()))

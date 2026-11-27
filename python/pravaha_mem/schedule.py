@@ -491,3 +491,17 @@ def cli(path, device=0, raw=False, json_path=None):
     if not raw:
         print(table(parsed))
     return 0 if (parsed["done"] or {}).get("checks_ok") else 3
+
+
+TEMPLATE = r'''{
+  "comment": "My first schedule. Edit the slots, then run: pravaha schedule my_test.json. Rules: probe rates first; each measured slot at least 2 s (traffic) or 60 s (energy); idle between slots; begin and end with idle. Guide: docs/MANUAL.md, Designing a schedule.",
+  "pause_after_setup_s": 2,
+  "slots": [
+    {"name": "idle_before", "kind": "idle", "seconds": 10},
+    {"name": "my_streaming_read", "kind": "kernel", "op": "read", "footprint_mib": 1024, "logical_mib": 65536},
+    {"name": "gap", "kind": "idle", "seconds": 2},
+    {"name": "my_copy", "kind": "copy", "direction": "h2d", "host": "pinned", "size_mib": 256, "count": 64},
+    {"name": "idle_after", "kind": "idle", "seconds": 10}
+  ]
+}
+'''
